@@ -1,0 +1,31 @@
+{
+  "name": "ml-ralph",
+  "version": "0.1.0",
+  "description": "Autonomous ML engineering agent with TUI",
+  "module": "src/index.tsx",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "ml-ralph": "./src/index.tsx"
+  },
+  "scripts": {
+    "dev": "bun run src/index.tsx",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "lint": "bunx @biomejs/biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.13",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.9"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "ink": "^6.6.0",
+    "ink-spinner": "^5.0.0",
+    "react": "^19.2.4",
+    "zustand": "^5.0.10"
+  }
+}
