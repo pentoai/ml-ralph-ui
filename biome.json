@@ -26,6 +26,12 @@
     }
   },
   "files": {
-    "includes": ["**", "!**/node_modules", "!**/dist", "!**/*.md"]
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/*.md",
+      "!**/opencode"
+    ]
   }
 }
