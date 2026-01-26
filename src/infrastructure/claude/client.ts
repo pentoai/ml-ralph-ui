@@ -28,9 +28,9 @@ export class BunClaudeCodeClient implements ClaudeCodeClient {
       args.push("--allowedTools", options.allowedTools.join(","));
     }
 
-    // Add system prompt if specified
+    // Append to system prompt if specified (don't replace Claude Code's default)
     if (options?.systemPrompt) {
-      args.push("--system-prompt", options.systemPrompt);
+      args.push("--append-system-prompt", options.systemPrompt);
     }
 
     // Continue conversation if specified
