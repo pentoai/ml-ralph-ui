@@ -199,17 +199,12 @@ export interface ExecuteOptions {
   cwd?: string;
 
   /**
-   * Allowed tools for Claude Code
+   * Allowed tools for Claude Code (defaults to common tools)
    */
   allowedTools?: string[];
 
   /**
-   * System prompt to prepend
-   */
-  systemPrompt?: string;
-
-  /**
-   * Continue from a previous conversation
+   * Continue from a previous conversation (uses --continue flag)
    */
   continueConversation?: boolean;
 

@@ -14,6 +14,18 @@ export class BunClaudeCodeClient implements ClaudeCodeClient {
     this.projectPath = projectPath;
   }
 
+  // Default tools to allow (matching ml-ralph-app pattern)
+  private static readonly DEFAULT_TOOLS = [
+    "Read",
+    "Write",
+    "Edit",
+    "Bash",
+    "Glob",
+    "Grep",
+    "WebFetch",
+    "WebSearch",
+  ];
+
   async *execute(
     prompt: string,
     options?: ExecuteOptions,
@@ -23,17 +35,11 @@ export class BunClaudeCodeClient implements ClaudeCodeClient {
     // Build command arguments
     const args = ["-p", prompt, "--output-format", "stream-json"];
 
-    // Add allowed tools if specified
-    if (options?.allowedTools && options.allowedTools.length > 0) {
-      args.push("--allowedTools", options.allowedTools.join(","));
-    }
+    // Always specify allowed tools explicitly (avoids issues with tool conflicts)
+    const tools = options?.allowedTools ?? BunClaudeCodeClient.DEFAULT_TOOLS;
+    args.push("--allowedTools", tools.join(","));
 
-    // Append to system prompt if specified (don't replace Claude Code's default)
-    if (options?.systemPrompt) {
-      args.push("--append-system-prompt", options.systemPrompt);
-    }
-
-    // Continue conversation if specified
+    // Continue conversation if specified (for follow-up messages)
     if (options?.continueConversation) {
       args.push("--continue");
     }

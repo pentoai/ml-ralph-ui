@@ -33,10 +33,9 @@ export function PlanningScreen() {
   const currentMessageIdRef = useRef<string | null>(null);
   const [currentTools, setCurrentTools] = useState<ToolCall[]>([]);
 
-  // Claude Code hook - no custom system prompt to avoid tool conflicts
+  // Claude Code hook
   const claude = useClaude({
     projectPath: projectPath ?? process.cwd(),
-    // Note: system prompts can conflict with some tools, so we don't use one
   });
 
   // Update message content when claude.displayText changes (animated)

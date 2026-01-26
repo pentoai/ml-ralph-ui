@@ -11,7 +11,6 @@ const TYPING_INTERVAL = 16; // ~60fps
 
 interface UseClaudeOptions {
   projectPath: string;
-  systemPrompt?: string;
 }
 
 interface UseClaudeReturn {
@@ -73,9 +72,7 @@ export function useClaude(options: UseClaudeOptions): UseClaudeReturn {
 
       try {
         for await (const event of client.execute(message, {
-          systemPrompt: options.systemPrompt,
           continueConversation: sessionIdRef.current !== null,
-          resumeSession: sessionIdRef.current ?? undefined,
         })) {
           processEvent(event, {
             onText: (text) => {
@@ -105,7 +102,7 @@ export function useClaude(options: UseClaudeOptions): UseClaudeReturn {
         setCurrentTool(null);
       }
     },
-    [getClient, options.systemPrompt],
+    [getClient],
   );
 
   const cancel = useCallback(() => {
