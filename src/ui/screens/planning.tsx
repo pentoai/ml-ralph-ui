@@ -3,7 +3,7 @@
  */
 
 import { Box, Text } from "ink";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppStore } from "../../application/state/index.ts";
 import type { PRD, ToolCall } from "../../domain/types/index.ts";
 import { createChatMessage } from "../../domain/types/index.ts";
@@ -31,71 +31,60 @@ export function PlanningScreen() {
 
   // Track the current streaming message
   const currentMessageIdRef = useRef<string | null>(null);
-  const currentToolsRef = useRef<ToolCall[]>([]);
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [currentTools, setCurrentTools] = useState<ToolCall[]>([]);
 
-  // Claude Code hook
-  const claude = useClaude(
-    {
-      projectPath: projectPath ?? process.cwd(),
-      systemPrompt: buildPlanningSystemPrompt(prd),
-    },
-    {
-      onText: () => {
-        // Update the current assistant message with accumulated text
-        if (currentMessageIdRef.current) {
-          updateChatMessage(currentMessageIdRef.current, {
-            content: claude.currentText,
-          });
-        }
-      },
-      onToolStart: (tool, description) => {
-        // Add tool to current message
-        const toolCall: ToolCall = {
-          id: crypto.randomUUID(),
-          tool,
-          input: description ?? "",
-          status: "running",
-        };
-        currentToolsRef.current = [...currentToolsRef.current, toolCall];
+  // Claude Code hook - simpler version without callbacks
+  const claude = useClaude({
+    projectPath: projectPath ?? process.cwd(),
+    systemPrompt: buildPlanningSystemPrompt(prd),
+  });
 
-        if (currentMessageIdRef.current) {
-          updateChatMessage(currentMessageIdRef.current, {
-            toolCalls: currentToolsRef.current,
-          });
-        }
-      },
-      onToolEnd: () => {
-        // Mark last tool as completed
-        if (currentToolsRef.current.length > 0) {
-          const lastTool =
-            currentToolsRef.current[currentToolsRef.current.length - 1];
-          if (lastTool) {
-            currentToolsRef.current = currentToolsRef.current.map((t, i) =>
-              i === currentToolsRef.current.length - 1
-                ? { ...t, status: "completed" as const }
-                : t,
-            );
+  // Update message content when claude.displayText changes (animated)
+  useEffect(() => {
+    if (currentMessageIdRef.current && claude.displayText) {
+      updateChatMessage(currentMessageIdRef.current, {
+        content: claude.displayText,
+      });
+    }
+  }, [claude.displayText, updateChatMessage]);
 
-            if (currentMessageIdRef.current) {
-              updateChatMessage(currentMessageIdRef.current, {
-                toolCalls: currentToolsRef.current,
-              });
-            }
-          }
-        }
-      },
-      onDone: () => {
-        setIsStreaming(false);
-        currentMessageIdRef.current = null;
-        currentToolsRef.current = [];
-      },
-      onError: (message) => {
-        setError(message);
-        setIsStreaming(false);
-      },
-    },
-  );
+  // Update tool display when claude.currentTool changes
+  useEffect(() => {
+    if (currentMessageIdRef.current && claude.currentTool) {
+      const newTool: ToolCall = {
+        id: crypto.randomUUID(),
+        tool: claude.currentTool,
+        input: "",
+        status: "running",
+      };
+      setCurrentTools((prev) => {
+        // Mark previous tools as completed
+        const updated = prev.map((t) => ({
+          ...t,
+          status: "completed" as const,
+        }));
+        return [...updated, newTool];
+      });
+    }
+  }, [claude.currentTool]);
+
+  // Update message with tools
+  useEffect(() => {
+    if (currentMessageIdRef.current && currentTools.length > 0) {
+      updateChatMessage(currentMessageIdRef.current, {
+        toolCalls: currentTools,
+      });
+    }
+  }, [currentTools, updateChatMessage]);
+
+  // Handle loading state changes (completion)
+  useEffect(() => {
+    if (!claude.isLoading && currentMessageIdRef.current) {
+      // Claude finished - clean up
+      currentMessageIdRef.current = null;
+      setCurrentTools([]);
+    }
+  }, [claude.isLoading]);
 
   const handleSendMessage = useCallback(
     async (content: string) => {
@@ -107,13 +96,16 @@ export function PlanningScreen() {
       const assistantMessage = createChatMessage("assistant", "");
       addChatMessage(assistantMessage);
       currentMessageIdRef.current = assistantMessage.id;
-      currentToolsRef.current = [];
-      setIsStreaming(true);
+      setCurrentTools([]);
 
       // Send to Claude Code
-      await claude.sendMessage(content);
+      try {
+        await claude.sendMessage(content);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
     },
-    [addChatMessage, claude],
+    [addChatMessage, claude.sendMessage, setError],
   );
 
   const stories = prd?.stories ?? [];
@@ -132,13 +124,26 @@ export function PlanningScreen() {
           <Text color={colors.accentBlue} bold>
             Claude Code
           </Text>
+          {(claude.isLoading ||
+            claude.displayText.length < claude.currentText.length) && (
+            <Text color={colors.accentYellow}>
+              {" "}
+              [{claude.displayText.length}/{claude.currentText.length}]
+            </Text>
+          )}
+          {claude.error && (
+            <Text color={colors.accentRed}>
+              {" "}
+              Error: {claude.error.slice(0, 50)}
+            </Text>
+          )}
         </Box>
         <Box flexDirection="column" flexGrow={1}>
           <ChatPanel
             messages={chatMessages}
             onSendMessage={handleSendMessage}
             inputMode={inputMode}
-            isLoading={isStreaming}
+            isLoading={claude.isLoading}
             currentTool={claude.currentTool}
           />
         </Box>

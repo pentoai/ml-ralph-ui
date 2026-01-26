@@ -43,16 +43,16 @@ export class BunClaudeCodeClient implements ClaudeCodeClient {
       args.push("--resume", options.resumeSession);
     }
 
-    // Max turns limit if specified
-    if (options?.maxTurns) {
-      args.push("--max-turns", String(options.maxTurns));
-    }
+    // Max turns limit (default to 10 if not specified)
+    const maxTurns = options?.maxTurns ?? 10;
+    args.push("--max-turns", String(maxTurns));
 
     try {
       // Spawn Claude Code process
       this.process = spawn({
         cmd: ["claude", ...args],
         cwd,
+        stdin: "ignore", // Close stdin so Claude doesn't wait for input
         stdout: "pipe",
         stderr: "pipe",
       });

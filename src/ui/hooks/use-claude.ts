@@ -2,9 +2,12 @@
  * Hook for interacting with Claude Code in the chat panel
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { StreamEvent } from "../../infrastructure/claude/index.ts";
 import { BunClaudeCodeClient } from "../../infrastructure/claude/index.ts";
+
+const TYPING_SPEED = 5; // characters per frame
+const TYPING_INTERVAL = 16; // ~60fps
 
 interface UseClaudeOptions {
   projectPath: string;
@@ -16,28 +19,38 @@ interface UseClaudeReturn {
   cancel: () => void;
   isLoading: boolean;
   currentText: string;
+  displayText: string; // Animated text for streaming effect
   currentTool: string | null;
   sessionId: string | null;
+  error: string | null;
 }
 
-interface StreamCallbacks {
-  onText?: (text: string) => void;
-  onToolStart?: (tool: string, description?: string) => void;
-  onToolEnd?: () => void;
-  onDone?: (sessionId?: string) => void;
-  onError?: (message: string) => void;
-}
-
-export function useClaude(
-  options: UseClaudeOptions,
-  callbacks?: StreamCallbacks,
-): UseClaudeReturn {
+export function useClaude(options: UseClaudeOptions): UseClaudeReturn {
   const clientRef = useRef<BunClaudeCodeClient | null>(null);
   const sessionIdRef = useRef<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [currentText, setCurrentText] = useState("");
+  const [displayText, setDisplayText] = useState("");
   const [currentTool, setCurrentTool] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Animate text to create streaming effect
+  useEffect(() => {
+    if (displayText.length >= currentText.length) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const nextLength = Math.min(
+        displayText.length + TYPING_SPEED,
+        currentText.length,
+      );
+      setDisplayText(currentText.slice(0, nextLength));
+    }, TYPING_INTERVAL);
+
+    return () => clearTimeout(timer);
+  }, [currentText, displayText]);
 
   // Initialize client lazily
   const getClient = useCallback(() => {
@@ -52,7 +65,9 @@ export function useClaude(
       const client = getClient();
       setIsLoading(true);
       setCurrentText("");
+      setDisplayText("");
       setCurrentTool(null);
+      setError(null);
 
       let accumulatedText = "";
 
@@ -62,35 +77,35 @@ export function useClaude(
           continueConversation: sessionIdRef.current !== null,
           resumeSession: sessionIdRef.current ?? undefined,
         })) {
-          handleStreamEvent(event, {
+          processEvent(event, {
             onText: (text) => {
               accumulatedText += text;
               setCurrentText(accumulatedText);
-              callbacks?.onText?.(text);
             },
-            onToolStart: (tool, description) => {
+            onToolStart: (tool) => {
               setCurrentTool(tool);
-              callbacks?.onToolStart?.(tool, description);
             },
             onToolEnd: () => {
               setCurrentTool(null);
-              callbacks?.onToolEnd?.();
             },
             onDone: (sessionId) => {
               if (sessionId) {
                 sessionIdRef.current = sessionId;
               }
-              callbacks?.onDone?.(sessionId);
             },
-            onError: callbacks?.onError,
+            onError: (msg) => {
+              setError(msg);
+            },
           });
         }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
       } finally {
         setIsLoading(false);
         setCurrentTool(null);
       }
     },
-    [getClient, options.systemPrompt, callbacks],
+    [getClient, options.systemPrompt],
   );
 
   const cancel = useCallback(() => {
@@ -104,38 +119,49 @@ export function useClaude(
     cancel,
     isLoading,
     currentText,
+    displayText,
     currentTool,
     sessionId: sessionIdRef.current,
+    error,
   };
 }
 
 /**
- * Handle a stream event and dispatch to appropriate callbacks
+ * Process a stream event
  */
-function handleStreamEvent(event: StreamEvent, callbacks: StreamCallbacks) {
+function processEvent(
+  event: StreamEvent,
+  handlers: {
+    onText: (text: string) => void;
+    onToolStart: (tool: string) => void;
+    onToolEnd: () => void;
+    onDone: (sessionId?: string) => void;
+    onError: (message: string) => void;
+  },
+) {
   switch (event.type) {
     case "init":
       // Session initialized
       break;
 
     case "text":
-      callbacks.onText?.(event.content);
+      handlers.onText(event.content);
       break;
 
     case "tool_start":
-      callbacks.onToolStart?.(event.tool, event.description);
+      handlers.onToolStart(event.tool);
       break;
 
     case "tool_result":
-      callbacks.onToolEnd?.();
+      handlers.onToolEnd();
       break;
 
     case "done":
-      callbacks.onDone?.(event.sessionId);
+      handlers.onDone(event.sessionId);
       break;
 
     case "error":
-      callbacks.onError?.(event.message);
+      handlers.onError(event.message);
       break;
   }
 }
