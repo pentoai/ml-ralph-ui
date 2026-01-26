@@ -11,6 +11,7 @@ interface ChatPanelProps {
   messages: ChatMessage[];
   onSendMessage: (content: string) => void;
   isLoading?: boolean;
+  currentTool?: string | null;
   maxMessages?: number;
   inputMode?: boolean;
 }
@@ -19,6 +20,7 @@ export function ChatPanel({
   messages,
   onSendMessage,
   isLoading = false,
+  currentTool = null,
   maxMessages = 50,
   inputMode = false,
 }: ChatPanelProps) {
@@ -58,7 +60,9 @@ export function ChatPanel({
         )}
         {isLoading && (
           <Box paddingX={1}>
-            <Text color={colors.accentYellow}>● Thinking...</Text>
+            <Text color={colors.accentYellow}>
+              ● {currentTool ? `Running: ${currentTool}` : "Thinking..."}
+            </Text>
           </Box>
         )}
       </Box>

@@ -156,6 +156,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
+  updateChatMessage: (id: string, updates: Partial<ChatMessage>) => {
+    set((state) => ({
+      chatMessages: state.chatMessages.map((msg) =>
+        msg.id === id ? { ...msg, ...updates } : msg,
+      ),
+    }));
+  },
+
   clearChat: () => set({ chatMessages: [] }),
 
   // Data

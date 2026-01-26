@@ -70,6 +70,7 @@ export interface AppActions {
 
   // Chat
   addChatMessage: (message: ChatMessage) => void;
+  updateChatMessage: (id: string, updates: Partial<ChatMessage>) => void;
   clearChat: () => void;
 
   // Data
