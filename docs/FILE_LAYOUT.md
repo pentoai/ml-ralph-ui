@@ -32,6 +32,7 @@ your-ml-project/
 ## File Descriptions
 
 ### `.ml-ralph/config.json`
+
 Project configuration. Created on `ml-ralph init`.
 
 ```json
@@ -51,9 +52,11 @@ Project configuration. Created on `ml-ralph init`.
 ```
 
 ### `.ml-ralph/prd.json`
+
 Product Requirements Document. Created via PRD chat.
 
 ### `.ml-ralph/progress.jsonl`
+
 Iteration log. One JSON object per line, append-only.
 
 ```jsonl
@@ -62,15 +65,19 @@ Iteration log. One JSON object per line, append-only.
 ```
 
 ### `.ml-ralph/learnings.jsonl`
+
 Accumulated learnings. One JSON object per line, append-only.
 
 ### `.ml-ralph/research.jsonl`
+
 Research items. One JSON object per line, append-only.
 
 ### `.ml-ralph/chat/prd-session.jsonl`
+
 PRD creation conversation. One message per line, append-only.
 
 ### `.ml-ralph/runs/active.json`
+
 Currently running training jobs. Array of `TrainingJob` objects.
 
 ```json
@@ -85,6 +92,7 @@ Currently running training jobs. Array of `TrainingJob` objects.
 ```
 
 ### `.ml-ralph/runs/history.jsonl`
+
 Completed training jobs. One JSON object per line, append-only.
 
 ---
@@ -217,6 +225,7 @@ ml-ralph/
 ## Naming Conventions
 
 ### Files
+
 - **Types**: `{entity}.ts` in domain/types/
 - **Interfaces**: Named `{Entity}` (PascalCase)
 - **Components**: `{widget-name}.tsx` (kebab-case files, PascalCase exports)
@@ -224,10 +233,12 @@ ml-ralph/
 - **Tests**: `{module}.test.ts` colocated or in tests/
 
 ### Directories
+
 - All lowercase, kebab-case
 - Group by architectural layer first, then by feature
 
 ### Exports
+
 - Each directory has `index.ts` for clean imports
 - Prefer named exports over default exports
 
@@ -235,13 +246,13 @@ ml-ralph/
 
 ```typescript
 // ✅ Good: Import from layer index
-import { Story, PRD } from '../domain/types';
-import { FileStore } from '../infrastructure/file-store';
-import { useOrchestrator } from '../ui/hooks';
+import { Story, PRD } from "../domain/types";
+import { FileStore } from "../infrastructure/file-store";
+import { useOrchestrator } from "../ui/hooks";
 
 // ❌ Bad: Deep imports
-import { Story } from '../domain/types/prd';
-import { JsonFileStore } from '../infrastructure/file-store/json-file-store';
+import { Story } from "../domain/types/prd";
+import { JsonFileStore } from "../infrastructure/file-store/json-file-store";
 ```
 
 ## Gitignore Recommendations

@@ -345,15 +345,15 @@ Add to Monitor screen:
 
 ## Timeline Estimate
 
-| Phase | Scope | Dependencies |
-|-------|-------|--------------|
-| 0 | Foundation | None |
-| 1 | Agent execution | Phase 0 |
-| 2 | PRD creation | Phase 1 |
-| 3 | Learnings | Phase 2 |
-| 4 | Research | Phase 3 |
-| 5 | Training monitoring | Phase 3 |
-| 6 | Polish | Phase 4, 5 |
+| Phase | Scope               | Dependencies |
+| ----- | ------------------- | ------------ |
+| 0     | Foundation          | None         |
+| 1     | Agent execution     | Phase 0      |
+| 2     | PRD creation        | Phase 1      |
+| 3     | Learnings           | Phase 2      |
+| 4     | Research            | Phase 3      |
+| 5     | Training monitoring | Phase 3      |
+| 6     | Polish              | Phase 4, 5   |
 
 Phases 4 and 5 can be done in parallel after Phase 3.
 
@@ -372,10 +372,10 @@ Phases 4 and 5 can be done in parallel after Phase 3.
 
 ## Risk Mitigation
 
-| Risk | Mitigation |
-|------|------------|
-| Claude Code API changes | Abstract behind interface, easy to update |
-| Ink limitations | Research alternatives early (blessed, etc.) |
-| W&B API issues | Graceful degradation (show "metrics unavailable") |
-| Performance with large logs | Virtual scrolling, pagination |
-| State corruption | Validation on read, atomic writes |
+| Risk                        | Mitigation                                        |
+| --------------------------- | ------------------------------------------------- |
+| Claude Code API changes     | Abstract behind interface, easy to update         |
+| Ink limitations             | Research alternatives early (blessed, etc.)       |
+| W&B API issues              | Graceful degradation (show "metrics unavailable") |
+| Performance with large logs | Virtual scrolling, pagination                     |
+| State corruption            | Validation on read, atomic writes                 |
