@@ -76,8 +76,8 @@ export function App({ projectPath }: AppProps) {
           appendAgentOutput(event.content);
         } else if (event.type === "tool_start") {
           appendAgentOutput(`> ${event.tool}: Starting...`);
-        } else if (event.type === "tool_end") {
-          appendAgentOutput(`> ${event.tool}: Done`);
+        } else if (event.type === "tool_result") {
+          appendAgentOutput(`> Tool completed`);
         } else if (event.type === "error") {
           appendAgentOutput(`ERROR: ${event.message}`);
         }
