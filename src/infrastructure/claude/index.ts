@@ -3,15 +3,20 @@
  */
 
 export { BunClaudeCodeClient } from "./client.ts";
-export { parseStreamLine } from "./stream-parser.ts";
+export {
+  abbreviateOutput,
+  getToolDescription,
+  parseStream,
+  parseStreamLine,
+} from "./stream-parser.ts";
 export type {
   ClaudeCodeClient,
   DoneEvent,
   ErrorEvent,
   ExecuteOptions,
+  InitEvent,
   StreamEvent,
   TextEvent,
-  ToolEndEvent,
-  ToolRunningEvent,
+  ToolResultEvent,
   ToolStartEvent,
 } from "./types.ts";

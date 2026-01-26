@@ -38,6 +38,16 @@ export class BunClaudeCodeClient implements ClaudeCodeClient {
       args.push("--continue");
     }
 
+    // Resume specific session if specified
+    if (options?.resumeSession) {
+      args.push("--resume", options.resumeSession);
+    }
+
+    // Max turns limit if specified
+    if (options?.maxTurns) {
+      args.push("--max-turns", String(options.maxTurns));
+    }
+
     try {
       // Spawn Claude Code process
       this.process = spawn({
@@ -64,8 +74,16 @@ export class BunClaudeCodeClient implements ClaudeCodeClient {
           if (done) {
             // Process remaining buffer
             if (buffer.trim()) {
-              const event = parseStreamLine(buffer);
-              if (event) yield event;
+              const events = parseStreamLine(buffer);
+              if (events) {
+                if (Array.isArray(events)) {
+                  for (const event of events) {
+                    yield event;
+                  }
+                } else {
+                  yield events;
+                }
+              }
             }
             break;
           }
@@ -77,8 +95,16 @@ export class BunClaudeCodeClient implements ClaudeCodeClient {
           buffer = lines.pop() ?? "";
 
           for (const line of lines) {
-            const event = parseStreamLine(line);
-            if (event) yield event;
+            const events = parseStreamLine(line);
+            if (events) {
+              if (Array.isArray(events)) {
+                for (const event of events) {
+                  yield event;
+                }
+              } else {
+                yield events;
+              }
+            }
           }
         }
       } finally {
