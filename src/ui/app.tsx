@@ -30,6 +30,8 @@ export function App({ projectPath }: AppProps) {
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   // Start confirmation state
   const [showStartConfirm, setShowStartConfirm] = useState(false);
+  // Stop confirmation state
+  const [showStopConfirm, setShowStopConfirm] = useState(false);
   // No PRD dialog state
   const [showNoPrdDialog, setShowNoPrdDialog] = useState(false);
   // Initialization state
@@ -215,6 +217,21 @@ export function App({ projectPath }: AppProps) {
       return; // Ignore other keys while dialog is open
     }
 
+    // Handle stop confirmation dialog
+    if (showStopConfirm) {
+      if (input === "y" || input === "Y") {
+        orchestratorRef.current?.stop();
+        setAgentStatus("idle");
+        setShowStopConfirm(false);
+        return;
+      }
+      if (input === "n" || input === "N" || key.escape) {
+        setShowStopConfirm(false);
+        return;
+      }
+      return; // Ignore other keys while dialog is open
+    }
+
     // Handle no PRD dialog
     if (showNoPrdDialog) {
       if (key.escape || input === "o" || input === "O") {
@@ -280,8 +297,7 @@ export function App({ projectPath }: AppProps) {
     // Start/stop agent
     if (input === "s") {
       if (agentStatus === "running") {
-        orchestratorRef.current?.stop();
-        setAgentStatus("idle");
+        setShowStopConfirm(true);
       } else {
         // Check if PRD exists before allowing start
         const checkPrd = async () => {
@@ -393,6 +409,9 @@ export function App({ projectPath }: AppProps) {
 
       {/* Start confirmation dialog */}
       {showStartConfirm && <StartConfirmDialog />}
+
+      {/* Stop confirmation dialog */}
+      {showStopConfirm && <StopConfirmDialog />}
 
       {/* No PRD dialog */}
       {showNoPrdDialog && <NoPrdDialog />}
@@ -517,6 +536,55 @@ function StartConfirmDialog() {
         <Box marginTop={1}>
           <Text color={colors.textSecondary}>
             This will start the autonomous ML agent loop.
+          </Text>
+        </Box>
+        <Box marginTop={1} justifyContent="center">
+          <Box marginRight={2}>
+            <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}>
+              {" "}
+              Y{" "}
+            </Text>
+            <Text color={colors.textSecondary}> Yes</Text>
+          </Box>
+          <Box>
+            <Text backgroundColor={colors.accentRed} color={colors.bgPrimary}>
+              {" "}
+              N{" "}
+            </Text>
+            <Text color={colors.textSecondary}> No</Text>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+/**
+ * Stop confirmation dialog
+ */
+function StopConfirmDialog() {
+  return (
+    <Box
+      position="absolute"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      width="100%"
+      height="100%"
+    >
+      <Box
+        flexDirection="column"
+        borderStyle="double"
+        borderColor={colors.accentYellow}
+        paddingX={3}
+        paddingY={1}
+      >
+        <Text bold color={colors.text}>
+          Stop ml-ralph agent?
+        </Text>
+        <Box marginTop={1}>
+          <Text color={colors.textSecondary}>
+            This will stop the current iteration.
           </Text>
         </Box>
         <Box marginTop={1} justifyContent="center">
