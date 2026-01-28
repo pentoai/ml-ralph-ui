@@ -9,9 +9,13 @@ export const colors = {
   bgTertiary: "#0f3460",
 
   // Text
+  text: "#eaeaea",
   textPrimary: "#eaeaea",
   textSecondary: "#a0a0a0",
   textMuted: "#666666",
+
+  // Borders
+  border: "#444444",
 
   // Accents
   accentBlue: "#60A5FA",
