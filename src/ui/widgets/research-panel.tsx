@@ -1,23 +1,23 @@
 /**
- * Research panel widget
+ * Research panel widget - displays research from log.jsonl
  */
 
 import { Box, Text } from "ink";
-import type { ResearchItem } from "../../domain/types/index.ts";
+import type { ResearchEvent } from "../../infrastructure/ralph/index.ts";
 import { colors } from "../theme/colors.ts";
 
 interface ResearchPanelProps {
-  research: ResearchItem[];
-  maxHeight?: number;
+  research: ResearchEvent[];
+  maxItems?: number;
 }
 
-export function ResearchPanel({ research, maxHeight }: ResearchPanelProps) {
+export function ResearchPanel({ research, maxItems }: ResearchPanelProps) {
   if (research.length === 0) {
     return (
       <Box flexDirection="column" padding={1}>
         <Text color={colors.textMuted}>No research yet</Text>
         <Text color={colors.textMuted}>
-          Research items are collected as the agent explores solutions.
+          Research findings are collected as the agent explores solutions.
         </Text>
       </Box>
     );
@@ -25,21 +25,21 @@ export function ResearchPanel({ research, maxHeight }: ResearchPanelProps) {
 
   // Sort by timestamp descending (newest first)
   const sortedResearch = [...research].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
   );
 
-  const displayResearch = maxHeight
-    ? sortedResearch.slice(0, maxHeight)
+  const displayResearch = maxItems
+    ? sortedResearch.slice(0, maxItems)
     : sortedResearch;
 
   return (
-    <Box flexDirection="column">
-      {displayResearch.map((item) => (
-        <ResearchItemDisplay key={item.id} item={item} />
+    <Box flexDirection="column" gap={1}>
+      {displayResearch.map((item, index) => (
+        <ResearchItemDisplay key={`${item.ts}-${index}`} item={item} />
       ))}
-      {maxHeight && research.length > maxHeight && (
+      {maxItems && research.length > maxItems && (
         <Text color={colors.textMuted}>
-          ... and {research.length - maxHeight} more
+          ... and {research.length - maxItems} more
         </Text>
       )}
     </Box>
@@ -47,64 +47,27 @@ export function ResearchPanel({ research, maxHeight }: ResearchPanelProps) {
 }
 
 interface ResearchItemDisplayProps {
-  item: ResearchItem;
+  item: ResearchEvent;
 }
 
 function ResearchItemDisplay({ item }: ResearchItemDisplayProps) {
-  const typeIcon = getTypeIcon(item.type);
+  // Format timestamp
+  const date = new Date(item.ts);
+  const timeStr = date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   return (
-    <Box flexDirection="column" marginBottom={1}>
+    <Box flexDirection="column">
       <Box gap={1}>
-        <Text>{typeIcon}</Text>
-        <Text color={colors.textMuted}>{item.id}</Text>
-        <Text color={colors.accentPurple}>{item.type}</Text>
-        {item.storyId && <Text color={colors.textMuted}>{item.storyId}</Text>}
+        <Text>🔍</Text>
+        <Text color={colors.textMuted}>{timeStr}</Text>
+        <Text color={colors.accentPurple}>{item.source}</Text>
       </Box>
       <Box marginLeft={2}>
-        <Text color={colors.textPrimary} bold>
-          {item.title}
-        </Text>
+        <Text color={colors.text}>{item.insight}</Text>
       </Box>
-      {item.url && (
-        <Box marginLeft={2}>
-          <Text color={colors.accentBlue} dimColor>
-            {item.url.slice(0, 60)}
-            {item.url.length > 60 ? "..." : ""}
-          </Text>
-        </Box>
-      )}
-      {item.keyTakeaways.slice(0, 2).map((takeaway) => (
-        <Box key={takeaway} marginLeft={2}>
-          <Text color={colors.textSecondary}>• {takeaway}</Text>
-        </Box>
-      ))}
-      {item.keyTakeaways.length > 2 && (
-        <Box marginLeft={2}>
-          <Text color={colors.textMuted}>
-            ... and {item.keyTakeaways.length - 2} more takeaways
-          </Text>
-        </Box>
-      )}
     </Box>
   );
-}
-
-function getTypeIcon(type: ResearchItem["type"]): string {
-  switch (type) {
-    case "paper":
-      return "📄";
-    case "documentation":
-      return "📚";
-    case "tutorial":
-      return "📖";
-    case "stackoverflow":
-      return "💬";
-    case "blog":
-      return "📝";
-    case "repository":
-      return "📦";
-    default:
-      return "🔗";
-  }
 }

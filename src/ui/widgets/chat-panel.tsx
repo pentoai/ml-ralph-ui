@@ -1,10 +1,13 @@
 /**
  * Chat panel widget - for PRD creation conversation
+ * Features: Markdown rendering, tool display, scrolling
  */
 
+import Markdown from "@jescalan/ink-markdown";
 import { Box, Text, useInput } from "ink";
+import Spinner from "ink-spinner";
 import { useState } from "react";
-import type { ChatMessage } from "../../domain/types/index.ts";
+import type { ChatMessage, ToolCall } from "../../domain/types/index.ts";
 import { colors } from "../theme/colors.ts";
 
 interface ChatPanelProps {
@@ -21,13 +24,12 @@ export function ChatPanel({
   onSendMessage,
   isLoading = false,
   currentTool = null,
-  maxMessages = 50,
+  maxMessages = 20,
   inputMode = false,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
 
   useInput((inputChar, key) => {
-    // Only handle input when in input mode
     if (!inputMode) return;
 
     if (key.return && input.trim() && !isLoading) {
@@ -46,7 +48,7 @@ export function ChatPanel({
   return (
     <Box flexDirection="column" height="100%">
       {/* Messages area */}
-      <Box flexDirection="column" flexGrow={1}>
+      <Box flexDirection="column" flexGrow={1} overflowY="hidden">
         {displayMessages.length === 0 ? (
           <Box padding={1}>
             <Text color={colors.textMuted}>
@@ -55,13 +57,22 @@ export function ChatPanel({
           </Box>
         ) : (
           displayMessages.map((msg) => (
-            <ChatMessageDisplay key={msg.id} message={msg} />
+            <MessageBubble key={msg.id} message={msg} />
           ))
         )}
+
+        {/* Loading indicator */}
         {isLoading && (
-          <Box paddingX={1}>
+          <Box paddingX={1} paddingY={0}>
             <Text color={colors.accentYellow}>
-              ● {currentTool ? `Running: ${currentTool}` : "Thinking..."}
+              <Spinner type="dots" />{" "}
+              {currentTool ? (
+                <Text>
+                  <Text bold>{currentTool}</Text>
+                </Text>
+              ) : (
+                "Thinking..."
+              )}
             </Text>
           </Box>
         )}
@@ -69,50 +80,81 @@ export function ChatPanel({
 
       {/* Input area */}
       <Box
-        borderStyle="single"
+        borderStyle="round"
         borderColor={inputMode ? colors.accentBlue : colors.textMuted}
         paddingX={1}
+        marginTop={1}
       >
-        <Text color={inputMode ? colors.accentBlue : colors.textMuted}>
-          &gt;{" "}
+        <Text color={inputMode ? colors.accentGreen : colors.textMuted}>
+          {inputMode ? "› " : "> "}
         </Text>
-        <Text>{input}</Text>
-        {inputMode ? (
-          <Text color={colors.accentBlue}>│</Text>
-        ) : (
-          <Text color={colors.textMuted}> (press i to type)</Text>
-        )}
+        <Text>{input || (inputMode ? "" : "(press i to type)")}</Text>
+        {inputMode && <Text color={colors.accentBlue}>▌</Text>}
       </Box>
     </Box>
   );
 }
 
-interface ChatMessageDisplayProps {
+interface MessageBubbleProps {
   message: ChatMessage;
 }
 
-function ChatMessageDisplay({ message }: ChatMessageDisplayProps) {
+function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === "user";
 
   return (
-    <Box flexDirection="column" paddingX={1} marginBottom={1}>
-      <Text color={isUser ? colors.accentGreen : colors.accentBlue} bold>
-        {isUser ? "You" : "Claude"}:
-      </Text>
-      <Box marginLeft={2}>
-        <Text color={colors.textPrimary} wrap="wrap">
-          {message.content}
+    <Box flexDirection="column" paddingX={1} paddingY={0} marginBottom={1}>
+      {/* Role indicator */}
+      <Box>
+        <Text
+          color={isUser ? colors.accentGreen : colors.accentBlue}
+          bold
+          dimColor={false}
+        >
+          {isUser ? "You" : "Claude"}
         </Text>
       </Box>
+
+      {/* Message content with markdown */}
+      <Box marginLeft={1} flexDirection="column">
+        {message.content ? (
+          <Markdown>{message.content}</Markdown>
+        ) : (
+          <Text color={colors.textMuted}>...</Text>
+        )}
+      </Box>
+
+      {/* Tool calls display */}
       {message.toolCalls && message.toolCalls.length > 0 && (
-        <Box marginLeft={2} flexDirection="column">
+        <Box marginLeft={1} flexDirection="column" marginTop={0}>
           {message.toolCalls.map((tool) => (
-            <Text key={tool.id} color={colors.textMuted}>
-              [{tool.tool}]
-            </Text>
+            <ToolCallDisplay key={tool.id} tool={tool} />
           ))}
         </Box>
       )}
+    </Box>
+  );
+}
+
+interface ToolCallDisplayProps {
+  tool: ToolCall;
+}
+
+function ToolCallDisplay({ tool }: ToolCallDisplayProps) {
+  const statusColor =
+    tool.status === "running"
+      ? colors.accentYellow
+      : tool.status === "completed"
+        ? colors.accentGreen
+        : colors.accentRed;
+
+  const statusIcon =
+    tool.status === "running" ? "◐" : tool.status === "completed" ? "✓" : "✗";
+
+  return (
+    <Box>
+      <Text color={statusColor}>{statusIcon} </Text>
+      <Text color={colors.textMuted}>{tool.tool}</Text>
     </Box>
   );
 }

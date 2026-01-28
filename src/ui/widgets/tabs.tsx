@@ -56,15 +56,16 @@ export function ModeTabs({ activeMode }: ModeTabsProps) {
 }
 
 interface PlanningTabsProps {
-  activeTab: "learnings" | "research" | "stories";
-  onSelect?: (tab: "learnings" | "research" | "stories") => void;
+  activeTab: "prd" | "hypotheses" | "learnings" | "research";
+  onSelect?: (tab: "prd" | "hypotheses" | "learnings" | "research") => void;
 }
 
 export function PlanningTabs({ activeTab }: PlanningTabsProps) {
   return (
     <Tabs
       tabs={[
-        { id: "stories", label: "Stories" },
+        { id: "prd", label: "PRD" },
+        { id: "hypotheses", label: "Hypotheses" },
         { id: "learnings", label: "Learnings" },
         { id: "research", label: "Research" },
       ]}
