@@ -462,149 +462,87 @@ function HelpBar({
 }
 
 /**
- * Quit confirmation dialog
+ * Confirmation dialog wrapper
  */
+function ConfirmDialog({
+  title,
+  message,
+  borderColor,
+}: {
+  title: string;
+  message: string;
+  borderColor: string;
+}) {
+  return (
+    <Box
+      position="absolute"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      width="100%"
+      height="100%"
+      backgroundColor={colors.bgPrimary}
+    >
+      <Box
+        flexDirection="column"
+        borderStyle="double"
+        borderColor={borderColor}
+        paddingX={4}
+        paddingY={1}
+        backgroundColor={colors.bgSecondary}
+      >
+        <Text bold color={colors.text}>
+          {title}
+        </Text>
+        <Box marginTop={1}>
+          <Text color={colors.textSecondary}>{message}</Text>
+        </Box>
+        <Box marginTop={1} justifyContent="center" gap={3}>
+          <Box>
+            <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}>
+              {" Y "}
+            </Text>
+            <Text color={colors.textSecondary}> Yes</Text>
+          </Box>
+          <Box>
+            <Text backgroundColor={colors.accentRed} color={colors.bgPrimary}>
+              {" N "}
+            </Text>
+            <Text color={colors.textSecondary}> No</Text>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
 function QuitConfirmDialog() {
   return (
-    <Box
-      position="absolute"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      width="100%"
-      height="100%"
-    >
-      <Box
-        flexDirection="column"
-        borderStyle="double"
-        borderColor={colors.accentYellow}
-        paddingX={3}
-        paddingY={1}
-      >
-        <Text bold color={colors.text}>
-          Quit ml-ralph?
-        </Text>
-        <Box marginTop={1}>
-          <Text color={colors.textSecondary}>
-            This will close the tmux session.
-          </Text>
-        </Box>
-        <Box marginTop={1} justifyContent="center">
-          <Box marginRight={2}>
-            <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}>
-              {" "}
-              Y{" "}
-            </Text>
-            <Text color={colors.textSecondary}> Yes</Text>
-          </Box>
-          <Box>
-            <Text backgroundColor={colors.accentRed} color={colors.bgPrimary}>
-              {" "}
-              N{" "}
-            </Text>
-            <Text color={colors.textSecondary}> No</Text>
-          </Box>
-        </Box>
-      </Box>
-    </Box>
+    <ConfirmDialog
+      title="Quit ml-ralph?"
+      message="This will close the tmux session."
+      borderColor={colors.accentYellow}
+    />
   );
 }
 
-/**
- * Start confirmation dialog
- */
 function StartConfirmDialog() {
   return (
-    <Box
-      position="absolute"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      width="100%"
-      height="100%"
-    >
-      <Box
-        flexDirection="column"
-        borderStyle="double"
-        borderColor={colors.accentBlue}
-        paddingX={3}
-        paddingY={1}
-      >
-        <Text bold color={colors.text}>
-          Start ml-ralph agent?
-        </Text>
-        <Box marginTop={1}>
-          <Text color={colors.textSecondary}>
-            This will start the autonomous ML agent loop.
-          </Text>
-        </Box>
-        <Box marginTop={1} justifyContent="center">
-          <Box marginRight={2}>
-            <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}>
-              {" "}
-              Y{" "}
-            </Text>
-            <Text color={colors.textSecondary}> Yes</Text>
-          </Box>
-          <Box>
-            <Text backgroundColor={colors.accentRed} color={colors.bgPrimary}>
-              {" "}
-              N{" "}
-            </Text>
-            <Text color={colors.textSecondary}> No</Text>
-          </Box>
-        </Box>
-      </Box>
-    </Box>
+    <ConfirmDialog
+      title="Start ml-ralph agent?"
+      message="This will start the autonomous ML agent loop."
+      borderColor={colors.accentGreen}
+    />
   );
 }
 
-/**
- * Stop confirmation dialog
- */
 function StopConfirmDialog() {
   return (
-    <Box
-      position="absolute"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      width="100%"
-      height="100%"
-    >
-      <Box
-        flexDirection="column"
-        borderStyle="double"
-        borderColor={colors.accentYellow}
-        paddingX={3}
-        paddingY={1}
-      >
-        <Text bold color={colors.text}>
-          Stop ml-ralph agent?
-        </Text>
-        <Box marginTop={1}>
-          <Text color={colors.textSecondary}>
-            This will stop the current iteration.
-          </Text>
-        </Box>
-        <Box marginTop={1} justifyContent="center">
-          <Box marginRight={2}>
-            <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}>
-              {" "}
-              Y{" "}
-            </Text>
-            <Text color={colors.textSecondary}> Yes</Text>
-          </Box>
-          <Box>
-            <Text backgroundColor={colors.accentRed} color={colors.bgPrimary}>
-              {" "}
-              N{" "}
-            </Text>
-            <Text color={colors.textSecondary}> No</Text>
-          </Box>
-        </Box>
-      </Box>
-    </Box>
+    <ConfirmDialog
+      title="Stop ml-ralph agent?"
+      message="This will stop the current iteration."
+      borderColor={colors.accentYellow}
+    />
   );
 }
 
