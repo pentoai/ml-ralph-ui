@@ -130,8 +130,19 @@ async function ensureTmux(): Promise<void> {
   const command = [bunPath, scriptPath, ...args].join(" ");
 
   // Create new session running ml-ralph
+  // First create session in detached mode, enable mouse, then attach
+  await Bun.spawn([
+    "tmux", "new-session", "-d", "-s", sessionName, "-c", projectPath, command,
+  ]).exited;
+
+  // Enable mouse support for scrolling
+  await Bun.spawn([
+    "tmux", "set", "-t", sessionName, "-g", "mouse", "on",
+  ]).exited;
+
+  // Attach to the session
   const proc = Bun.spawn(
-    ["tmux", "new-session", "-s", sessionName, "-c", projectPath, command],
+    ["tmux", "attach-session", "-t", sessionName],
     {
       stdin: "inherit",
       stdout: "inherit",
