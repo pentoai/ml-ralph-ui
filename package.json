@@ -17,14 +17,18 @@
   "devDependencies": {
     "@biomejs/biome": "^2.3.13",
     "@types/bun": "latest",
-    "@types/react": "^19.2.9"
+    "@types/react": "^19.2.9",
+    "react-devtools-core": "^7.0.1"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
+    "@jescalan/ink-markdown": "^2.0.0",
     "ink": "^6.6.0",
+    "ink-markdown": "^1.0.4",
     "ink-spinner": "^5.0.0",
+    "node-pty": "^1.1.0",
     "react": "^19.2.4",
     "zustand": "^5.0.10"
   }
