@@ -1,0 +1,92 @@
+/**
+ * Knowledge panel - shared tabs for PRD, Hypotheses, Learnings, Research
+ * Used by both Planning and Monitor screens
+ */
+
+import { Box, Text } from "ink";
+import { useAppStore } from "../../application/state/index.ts";
+import { useRalphState } from "../hooks/index.ts";
+import { colors } from "../theme/colors.ts";
+import { HypothesesPanel } from "./hypotheses-panel.tsx";
+import { LearningsPanel } from "./learnings-panel.tsx";
+import { PrdPanel } from "./prd-panel.tsx";
+import { ResearchPanel } from "./research-panel.tsx";
+import { PlanningTabs } from "./tabs.tsx";
+
+export function KnowledgePanel() {
+  const { selectedTab, projectPath } = useAppStore();
+
+  // Read Ralph state from .ml-ralph files
+  const { prd, log, isLoaded } = useRalphState({
+    projectPath: projectPath || process.cwd(),
+    pollInterval: 2000,
+  });
+
+  // Map old tab names to new ones for backward compatibility
+  const activeTab = selectedTab === "stories"
+    ? "hypotheses"
+    : (selectedTab as "prd" | "hypotheses" | "learnings" | "research");
+
+  return (
+    <Box flexDirection="column" flexGrow={1}>
+      {/* PRD Status */}
+      {prd && (
+        <Box paddingX={1} marginBottom={0}>
+          <Text color={colors.textMuted}>
+            <Text color={colors.accentBlue}>{prd.project}</Text>
+            {" · "}
+            <Text color={prd.status === "approved" ? colors.accentGreen : colors.accentYellow}>
+              {prd.status}
+            </Text>
+            {log?.currentPhase && (
+              <>
+                {" · "}
+                <Text color={colors.accentPurple}>{log.currentPhase}</Text>
+              </>
+            )}
+          </Text>
+        </Box>
+      )}
+
+      {/* Knowledge panel */}
+      <Box
+        flexDirection="column"
+        borderStyle="single"
+        borderColor={colors.border}
+        flexGrow={1}
+      >
+        {/* Tabs header */}
+        <Box paddingX={1}>
+          <PlanningTabs activeTab={activeTab} />
+        </Box>
+
+        {/* Tab content */}
+        <Box
+          flexDirection="column"
+          paddingX={1}
+          flexGrow={1}
+          overflowY="hidden"
+        >
+          {!isLoaded ? (
+            <Box padding={1}>
+              <Text color={colors.textMuted}>Loading...</Text>
+            </Box>
+          ) : (
+            <>
+              {activeTab === "prd" && <PrdPanel prd={prd} />}
+              {activeTab === "hypotheses" && (
+                <HypothesesPanel hypotheses={log?.hypotheses ?? []} />
+              )}
+              {activeTab === "learnings" && (
+                <LearningsPanel learnings={log?.learnings ?? []} />
+              )}
+              {activeTab === "research" && (
+                <ResearchPanel research={log?.research ?? []} />
+              )}
+            </>
+          )}
+        </Box>
+      </Box>
+    </Box>
+  );
+}
