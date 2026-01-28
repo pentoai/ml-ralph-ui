@@ -8,34 +8,20 @@ import type {
   ResearchItem,
   Story,
 } from "../../domain/types/index.ts";
-import type { StreamEvent } from "../../infrastructure/claude/index.ts";
+import type { StreamEvent } from "../../infrastructure/ralph/index.ts";
 
 export interface AgentOrchestrator {
-  /**
-   * Start the agent loop
-   */
   start(): Promise<void>;
-
-  /**
-   * Stop the agent
-   */
   stop(): Promise<void>;
-
-  /**
-   * Check if agent is running
-   */
   isRunning(): boolean;
-
-  /**
-   * Subscribe to stream events
-   */
-  onStreamEvent(callback: (event: StreamEvent) => void): () => void;
-
-  /**
-   * Subscribe to story completion
-   */
+  getCurrentIteration(): number;
   onStoryComplete(
-    callback: (story: Story, result: StoryResult) => void,
+    callback: (story: Story, result: StoryResult) => void
+  ): () => void;
+  onOutput(callback: (event: StreamEvent) => void): () => void;
+  onIterationChange(callback: (iteration: number) => void): () => void;
+  onComplete(
+    callback: (reason: "project_complete" | "max_iterations") => void
   ): () => void;
 }
 
@@ -49,4 +35,5 @@ export interface StoryResult {
 export interface OrchestratorConfig {
   projectPath: string;
   autoAdvance: boolean;
+  maxIterations?: number;
 }

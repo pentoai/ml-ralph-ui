@@ -27,7 +27,7 @@ const initialState: AppState = {
   currentStory: null,
   agentOutput: [],
   chatMessages: [],
-  selectedTab: "stories",
+  selectedTab: "prd",
   inputMode: false,
   error: null,
 };
@@ -50,9 +50,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       const store = new JsonFileStore(projectPath);
 
+      // Auto-initialize if project doesn't exist
       if (!(await store.exists())) {
-        set({ error: "Project not initialized. Run ml-ralph init first." });
-        return;
+        const projectName = projectPath.split("/").pop() || "ml-project";
+        const defaultConfig = createDefaultConfig(projectName);
+        await store.initialize(defaultConfig);
       }
 
       const [config, prd, learnings, research, activeJobs] = await Promise.all([
