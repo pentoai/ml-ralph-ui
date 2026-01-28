@@ -13,8 +13,10 @@ import { PrdPanel } from "./prd-panel.tsx";
 import { ResearchPanel } from "./research-panel.tsx";
 import { PlanningTabs } from "./tabs.tsx";
 
+const ITEMS_PER_PAGE = 10;
+
 export function KnowledgePanel() {
-  const { selectedTab, projectPath } = useAppStore();
+  const { selectedTab, projectPath, scrollOffset } = useAppStore();
 
   // Read Ralph state from .ml-ralph files
   const { prd, log, isLoaded } = useRalphState({
@@ -75,13 +77,25 @@ export function KnowledgePanel() {
             <>
               {activeTab === "prd" && <PrdPanel prd={prd} />}
               {activeTab === "hypotheses" && (
-                <HypothesesPanel hypotheses={log?.hypotheses ?? []} />
+                <HypothesesPanel
+                  hypotheses={log?.hypotheses ?? []}
+                  offset={scrollOffset}
+                  limit={ITEMS_PER_PAGE}
+                />
               )}
               {activeTab === "learnings" && (
-                <LearningsPanel learnings={log?.learnings ?? []} />
+                <LearningsPanel
+                  learnings={log?.learnings ?? []}
+                  offset={scrollOffset}
+                  limit={ITEMS_PER_PAGE}
+                />
               )}
               {activeTab === "research" && (
-                <ResearchPanel research={log?.research ?? []} />
+                <ResearchPanel
+                  research={log?.research ?? []}
+                  offset={scrollOffset}
+                  limit={ITEMS_PER_PAGE}
+                />
               )}
             </>
           )}

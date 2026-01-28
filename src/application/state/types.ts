@@ -40,6 +40,7 @@ export interface AppState {
   // UI
   selectedTab: PlanningTab;
   inputMode: boolean; // When true, keyboard goes to chat input
+  scrollOffset: number; // Scroll offset for knowledge panel
 
   // Error state
   error: string | null;
@@ -55,6 +56,9 @@ export interface AppActions {
   setMode: (mode: AppMode) => void;
   setSelectedTab: (tab: PlanningTab) => void;
   setInputMode: (active: boolean) => void;
+  setScrollOffset: (offset: number) => void;
+  scrollUp: () => void;
+  scrollDown: () => void;
 
   // PRD
   setPRD: (prd: PRD) => void;

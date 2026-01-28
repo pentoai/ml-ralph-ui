@@ -29,6 +29,7 @@ const initialState: AppState = {
   chatMessages: [],
   selectedTab: "prd",
   inputMode: false,
+  scrollOffset: 0,
   error: null,
 };
 
@@ -105,8 +106,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   // Mode
   setMode: (mode) => set({ mode }),
-  setSelectedTab: (tab) => set({ selectedTab: tab }),
+  setSelectedTab: (tab) => set({ selectedTab: tab, scrollOffset: 0 }), // Reset scroll on tab change
   setInputMode: (active) => set({ inputMode: active }),
+  setScrollOffset: (offset) => set({ scrollOffset: Math.max(0, offset) }),
+  scrollUp: () => set((state) => ({ scrollOffset: Math.max(0, state.scrollOffset - 1) })),
+  scrollDown: () => set((state) => ({ scrollOffset: state.scrollOffset + 1 })),
 
   // PRD
   setPRD: (prd: PRD) => set({ prd }),

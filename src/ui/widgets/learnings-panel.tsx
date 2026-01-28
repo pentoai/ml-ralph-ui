@@ -8,10 +8,11 @@ import { colors } from "../theme/colors.ts";
 
 interface LearningsPanelProps {
   learnings: LearningEvent[];
-  maxItems?: number;
+  offset?: number;
+  limit?: number;
 }
 
-export function LearningsPanel({ learnings, maxItems }: LearningsPanelProps) {
+export function LearningsPanel({ learnings, offset = 0, limit = 10 }: LearningsPanelProps) {
   if (learnings.length === 0) {
     return (
       <Box flexDirection="column" padding={1}>
@@ -28,20 +29,22 @@ export function LearningsPanel({ learnings, maxItems }: LearningsPanelProps) {
     (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
   );
 
-  const displayLearnings = maxItems
-    ? sortedLearnings.slice(0, maxItems)
-    : sortedLearnings;
+  const total = sortedLearnings.length;
+  const safeOffset = Math.min(offset, Math.max(0, total - 1));
+  const displayLearnings = sortedLearnings.slice(safeOffset, safeOffset + limit);
+  const hasMore = safeOffset + limit < total;
+  const hasPrev = safeOffset > 0;
 
   return (
     <Box flexDirection="column" gap={1}>
+      {(hasPrev || hasMore) && (
+        <Text color={colors.textMuted}>
+          Showing {safeOffset + 1}-{Math.min(safeOffset + limit, total)} of {total} (j/k to scroll)
+        </Text>
+      )}
       {displayLearnings.map((learning, index) => (
         <LearningItem key={`${learning.ts}-${index}`} learning={learning} />
       ))}
-      {maxItems && learnings.length > maxItems && (
-        <Text color={colors.textMuted}>
-          ... and {learnings.length - maxItems} more
-        </Text>
-      )}
     </Box>
   );
 }

@@ -8,10 +8,11 @@ import { colors } from "../theme/colors.ts";
 
 interface ResearchPanelProps {
   research: ResearchEvent[];
-  maxItems?: number;
+  offset?: number;
+  limit?: number;
 }
 
-export function ResearchPanel({ research, maxItems }: ResearchPanelProps) {
+export function ResearchPanel({ research, offset = 0, limit = 10 }: ResearchPanelProps) {
   if (research.length === 0) {
     return (
       <Box flexDirection="column" padding={1}>
@@ -28,20 +29,22 @@ export function ResearchPanel({ research, maxItems }: ResearchPanelProps) {
     (a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()
   );
 
-  const displayResearch = maxItems
-    ? sortedResearch.slice(0, maxItems)
-    : sortedResearch;
+  const total = sortedResearch.length;
+  const safeOffset = Math.min(offset, Math.max(0, total - 1));
+  const displayResearch = sortedResearch.slice(safeOffset, safeOffset + limit);
+  const hasMore = safeOffset + limit < total;
+  const hasPrev = safeOffset > 0;
 
   return (
     <Box flexDirection="column" gap={1}>
+      {(hasPrev || hasMore) && (
+        <Text color={colors.textMuted}>
+          Showing {safeOffset + 1}-{Math.min(safeOffset + limit, total)} of {total} (j/k to scroll)
+        </Text>
+      )}
       {displayResearch.map((item, index) => (
         <ResearchItemDisplay key={`${item.ts}-${index}`} item={item} />
       ))}
-      {maxItems && research.length > maxItems && (
-        <Text color={colors.textMuted}>
-          ... and {research.length - maxItems} more
-        </Text>
-      )}
     </Box>
   );
 }

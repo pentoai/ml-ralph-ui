@@ -69,6 +69,8 @@ export function App({ projectPath }: AppProps) {
     stopTrainingJob,
     inputMode,
     setInputMode,
+    scrollUp,
+    scrollDown,
   } = useAppStore();
 
   // Tmux layout manager
@@ -294,6 +296,16 @@ export function App({ projectPath }: AppProps) {
     if (input === "3") setSelectedTab("learnings");
     if (input === "4") setSelectedTab("research");
 
+    // Scroll knowledge panel (j/k or arrow keys)
+    if (input === "j" || key.downArrow) {
+      scrollDown();
+      return;
+    }
+    if (input === "k" || key.upArrow) {
+      scrollUp();
+      return;
+    }
+
     // Start/stop agent
     if (input === "s") {
       if (agentStatus === "running") {
@@ -445,6 +457,7 @@ function HelpBar({
         <Shortcut keys="Tab" label="Monitor" />
         <Shortcut keys="f" label="Terminal" />
         <Shortcut keys="1-4" label="Tabs" />
+        <Shortcut keys="j/k" label="Scroll" />
         <Shortcut keys="s" label={agentStatus === "running" ? "Stop" : "Start"} />
         <Shortcut keys="q" label="Quit" />
       </Box>
@@ -455,6 +468,7 @@ function HelpBar({
     <Box>
       <Shortcut keys="Tab" label="Planning" />
       <Shortcut keys="1-4" label="Tabs" />
+      <Shortcut keys="j/k" label="Scroll" />
       <Shortcut keys="s" label={agentStatus === "running" ? "Stop" : "Start"} />
       <Shortcut keys="q" label="Quit" />
     </Box>

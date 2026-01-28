@@ -8,9 +8,11 @@ import { colors } from "../theme/colors.ts";
 
 interface HypothesesPanelProps {
   hypotheses: HypothesisWithStatus[];
+  offset?: number;
+  limit?: number;
 }
 
-export function HypothesesPanel({ hypotheses }: HypothesesPanelProps) {
+export function HypothesesPanel({ hypotheses, offset = 0, limit = 5 }: HypothesesPanelProps) {
   if (hypotheses.length === 0) {
     return (
       <Box flexDirection="column" padding={1}>
@@ -22,9 +24,20 @@ export function HypothesesPanel({ hypotheses }: HypothesesPanelProps) {
     );
   }
 
+  const total = hypotheses.length;
+  const safeOffset = Math.min(offset, Math.max(0, total - 1));
+  const displayHypotheses = hypotheses.slice(safeOffset, safeOffset + limit);
+  const hasMore = safeOffset + limit < total;
+  const hasPrev = safeOffset > 0;
+
   return (
     <Box flexDirection="column" gap={1}>
-      {hypotheses.map((h) => (
+      {(hasPrev || hasMore) && (
+        <Text color={colors.textMuted}>
+          Showing {safeOffset + 1}-{Math.min(safeOffset + limit, total)} of {total} (j/k to scroll)
+        </Text>
+      )}
+      {displayHypotheses.map((h) => (
         <HypothesisItem key={h.id} hypothesis={h} />
       ))}
     </Box>
