@@ -45,6 +45,8 @@ export interface AppState {
   backlogOffset: number; // Kanban backlog scroll offset
   completedExpanded: boolean; // Kanban completed toggle
   completedOffset: number; // Kanban completed scroll offset
+  abandonedExpanded: boolean; // Kanban abandoned toggle
+  abandonedOffset: number; // Kanban abandoned scroll offset
 
   // Error state
   error: string | null;
@@ -71,6 +73,10 @@ export interface AppActions {
   setCompletedOffset: (offset: number) => void;
   scrollCompletedUp: () => void;
   scrollCompletedDown: () => void;
+  setAbandonedExpanded: (expanded: boolean) => void;
+  setAbandonedOffset: (offset: number) => void;
+  scrollAbandonedUp: () => void;
+  scrollAbandonedDown: () => void;
 
   // PRD
   setPRD: (prd: PRD) => void;

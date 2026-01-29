@@ -34,6 +34,8 @@ const initialState: AppState = {
   backlogOffset: 0,
   completedExpanded: false,
   completedOffset: 0,
+  abandonedExpanded: false,
+  abandonedOffset: 0,
   error: null,
 };
 
@@ -123,6 +125,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setCompletedOffset: (offset) => set({ completedOffset: Math.max(0, offset) }),
   scrollCompletedUp: () => set((state) => ({ completedOffset: Math.max(0, state.completedOffset - 1) })),
   scrollCompletedDown: () => set((state) => ({ completedOffset: state.completedOffset + 1 })),
+  setAbandonedExpanded: (expanded) => set({ abandonedExpanded: expanded, abandonedOffset: 0 }),
+  setAbandonedOffset: (offset) => set({ abandonedOffset: Math.max(0, offset) }),
+  scrollAbandonedUp: () => set((state) => ({ abandonedOffset: Math.max(0, state.abandonedOffset - 1) })),
+  scrollAbandonedDown: () => set((state) => ({ abandonedOffset: state.abandonedOffset + 1 })),
 
   // PRD
   setPRD: (prd: PRD) => set({ prd }),

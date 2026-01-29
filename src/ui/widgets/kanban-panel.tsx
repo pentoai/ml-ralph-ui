@@ -14,6 +14,8 @@ interface KanbanPanelProps {
   backlogOffset?: number;
   completedExpanded?: boolean;
   completedOffset?: number;
+  abandonedExpanded?: boolean;
+  abandonedOffset?: number;
 }
 
 /**
@@ -236,6 +238,8 @@ export function KanbanPanel({
   backlogOffset = 0,
   completedExpanded = false,
   completedOffset = 0,
+  abandonedExpanded = false,
+  abandonedOffset = 0,
 }: KanbanPanelProps) {
   if (!kanban) {
     return (
@@ -427,15 +431,52 @@ export function KanbanPanel({
 
       {/* Abandoned */}
       {kanban.abandoned.length > 0 && (
-        <Box flexDirection="column">
-          <SectionHeader title="ABANDONED" color={colors.accentRed} count={kanban.abandoned.length} />
-          <Box flexDirection="column" marginTop={1}>
-            {kanban.abandoned.slice(-2).reverse().map((task, i) => (
-              <AbandonedItem key={task.id || i} task={task} />
-            ))}
+        <Box flexDirection="column" marginBottom={1} marginTop={1}>
+          {/* Abandoned header - always visible */}
+          <Box>
+            <Text color={abandonedExpanded ? colors.accentRed : colors.textMuted}>
+              {abandonedExpanded ? "▼" : "▶"}{" "}
+            </Text>
+            <Text color={abandonedExpanded ? colors.accentRed : colors.textMuted} bold>ABANDONED </Text>
+            <Text backgroundColor={colors.accentRed} color={colors.bgPrimary}> {kanban.abandoned.length} </Text>
+            <Text color={colors.textSecondary}> dropped</Text>
+            <Text color={colors.textMuted}> (press </Text>
+            <Text color={colors.accentRed}>a</Text>
+            <Text color={colors.textMuted}> to {abandonedExpanded ? "collapse" : "expand"})</Text>
           </Box>
-          {kanban.abandoned.length > 2 && (
-            <Text color={colors.textMuted}>    + {kanban.abandoned.length - 2} more abandoned</Text>
+
+          {/* Expanded abandoned items */}
+          {abandonedExpanded && (
+            <Box
+              flexDirection="column"
+              marginTop={1}
+              borderStyle="single"
+              borderColor={colors.accentRed}
+              paddingX={2}
+              paddingY={1}
+            >
+              {/* Scroll hint */}
+              {kanban.abandoned.length > 5 && (
+                <Box marginBottom={1}>
+                  <Text color={colors.textMuted}>
+                    Showing {abandonedOffset + 1}-{Math.min(abandonedOffset + 5, kanban.abandoned.length)} of {kanban.abandoned.length}
+                  </Text>
+                  <Text color={colors.textSecondary}> (Shift+J/K to scroll)</Text>
+                </Box>
+              )}
+
+              {/* Abandoned items - show newest first */}
+              {[...kanban.abandoned].reverse().slice(abandonedOffset, abandonedOffset + 5).map((task, i) => (
+                <AbandonedItem key={task.id || i} task={task} />
+              ))}
+
+              {/* More items indicator */}
+              {abandonedOffset + 5 < kanban.abandoned.length && (
+                <Text color={colors.textMuted}>
+                  ... {kanban.abandoned.length - abandonedOffset - 5} more below
+                </Text>
+              )}
+            </Box>
           )}
         </Box>
       )}

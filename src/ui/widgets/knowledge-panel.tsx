@@ -17,7 +17,7 @@ import { PlanningTabs } from "./tabs.tsx";
 const ITEMS_PER_PAGE = 5;
 
 export function KnowledgePanel() {
-  const { selectedTab, projectPath, scrollOffset, backlogExpanded, backlogOffset, completedExpanded, completedOffset } = useAppStore();
+  const { selectedTab, projectPath, scrollOffset, backlogExpanded, backlogOffset, completedExpanded, completedOffset, abandonedExpanded, abandonedOffset } = useAppStore();
 
   // Read Ralph state from .ml-ralph files
   const { prd, log, kanban, isLoaded } = useRalphState({
@@ -107,6 +107,8 @@ export function KnowledgePanel() {
                   backlogOffset={backlogOffset}
                   completedExpanded={completedExpanded}
                   completedOffset={completedOffset}
+                  abandonedExpanded={abandonedExpanded}
+                  abandonedOffset={abandonedOffset}
                 />
               )}
             </>

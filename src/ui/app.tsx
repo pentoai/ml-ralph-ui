@@ -88,6 +88,10 @@ export function App({ projectPath }: AppProps) {
     setCompletedExpanded,
     scrollCompletedUp,
     scrollCompletedDown,
+    abandonedExpanded,
+    setAbandonedExpanded,
+    scrollAbandonedUp,
+    scrollAbandonedDown,
   } = useAppStore();
 
   // Tmux layout manager
@@ -373,6 +377,12 @@ export function App({ projectPath }: AppProps) {
       return;
     }
 
+    // Toggle abandoned expansion (only on kanban tab)
+    if (input === "a" && selectedTab === "kanban") {
+      setAbandonedExpanded(!abandonedExpanded);
+      return;
+    }
+
     // Scroll backlog when expanded (Shift+J/K)
     if (backlogExpanded && selectedTab === "kanban") {
       if (input === "J") {
@@ -386,13 +396,25 @@ export function App({ projectPath }: AppProps) {
     }
 
     // Scroll completed when expanded (Shift+J/K) - only if backlog not expanded
-    if (completedExpanded && !backlogExpanded && selectedTab === "kanban") {
+    if (completedExpanded && !backlogExpanded && !abandonedExpanded && selectedTab === "kanban") {
       if (input === "J") {
         scrollCompletedDown();
         return;
       }
       if (input === "K") {
         scrollCompletedUp();
+        return;
+      }
+    }
+
+    // Scroll abandoned when expanded (Shift+J/K) - only if backlog/completed not expanded
+    if (abandonedExpanded && !backlogExpanded && !completedExpanded && selectedTab === "kanban") {
+      if (input === "J") {
+        scrollAbandonedDown();
+        return;
+      }
+      if (input === "K") {
+        scrollAbandonedUp();
         return;
       }
     }
