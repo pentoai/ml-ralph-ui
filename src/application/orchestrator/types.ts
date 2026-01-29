@@ -15,6 +15,9 @@ export interface AgentOrchestrator {
   stop(): Promise<void>;
   isRunning(): boolean;
   getCurrentIteration(): number;
+  setMaxIterations(maxIterations: number): void;
+  addHint(hint: string): void;
+  getPendingHintsCount(): number;
   onStoryComplete(
     callback: (story: Story, result: StoryResult) => void
   ): () => void;

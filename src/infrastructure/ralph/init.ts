@@ -2,7 +2,7 @@
  * ML-Ralph initialization - creates .ml-ralph/ directory and templates
  */
 
-import { RALPH_MD, CLAUDE_MD, AGENTS_MD, SKILL_MD, DEFAULT_PRD } from "./templates.ts";
+import { RALPH_MD, CLAUDE_MD, AGENTS_MD, SKILL_MD, DEFAULT_PRD, DEFAULT_KANBAN } from "./templates.ts";
 
 const ML_RALPH_DIR = ".ml-ralph";
 
@@ -100,6 +100,14 @@ export async function initRalph(options: InitOptions): Promise<InitResult> {
       filesCreated.push(prdPath);
     }
 
+    // Create default kanban.json if it doesn't exist
+    const kanbanPath = `${mlRalphDir}/kanban.json`;
+    const kanbanExists = await Bun.file(kanbanPath).exists();
+    if (!kanbanExists) {
+      await Bun.write(kanbanPath, JSON.stringify(DEFAULT_KANBAN, null, 2));
+      filesCreated.push(kanbanPath);
+    }
+
     return {
       success: true,
       filesCreated,
@@ -182,6 +190,13 @@ export async function ensureInitialized(projectPath: string): Promise<boolean> {
     const projectName = projectPath.split("/").pop() || "ml-project";
     const prd = { ...DEFAULT_PRD, project: projectName };
     await Bun.write(prdPath, JSON.stringify(prd, null, 2));
+  }
+
+  // Create default kanban.json if it doesn't exist
+  const kanbanPath = `${mlRalphDir}/kanban.json`;
+  const kanbanFile = Bun.file(kanbanPath);
+  if (!(await kanbanFile.exists())) {
+    await Bun.write(kanbanPath, JSON.stringify(DEFAULT_KANBAN, null, 2));
   }
 
   // Verify initialization succeeded

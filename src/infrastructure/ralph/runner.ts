@@ -27,10 +27,11 @@ export class RalphRunner {
   private running = false;
   private currentProcess: Subprocess | null = null;
   private currentIteration = 0;
+  private pendingHints: string[] = [];
 
   constructor(config: RunnerConfig) {
     this.config = {
-      maxIterations: 100,
+      maxIterations: 10,
       ...config,
     };
   }
@@ -58,7 +59,7 @@ export class RalphRunner {
     this.running = true;
     this.currentIteration = 0;
 
-    const prompt = `Read .ml-ralph/RALPH.md for instructions.
+    const basePrompt = `Read .ml-ralph/RALPH.md for instructions.
 
 Execute one iteration of the cognitive loop. Update state files as needed.
 When done, output exactly: <iteration_complete>
@@ -71,6 +72,10 @@ If the project is complete (success criteria met), output: <project_complete>`;
 
         this.currentIteration = i;
         this.config.onIterationStart?.(i);
+
+        // Build prompt with any pending hints
+        const hints = this.consumeHints();
+        const prompt = hints ? basePrompt + hints : basePrompt;
 
         // Emit iteration marker
         this.config.onOutput?.({
@@ -117,6 +122,45 @@ If the project is complete (success criteria met), output: <project_complete>`;
    */
   isRunning(): boolean {
     return this.running;
+  }
+
+  /**
+   * Set the max iterations for the next run
+   */
+  setMaxIterations(maxIterations: number): void {
+    this.config.maxIterations = maxIterations;
+  }
+
+  /**
+   * Add a hint to the pending hints queue
+   * All pending hints will be consumed at the start of the next iteration
+   */
+  addHint(hint: string): void {
+    this.pendingHints.push(hint);
+  }
+
+  /**
+   * Get the number of pending hints
+   */
+  getPendingHintsCount(): number {
+    return this.pendingHints.length;
+  }
+
+  /**
+   * Consume and clear all pending hints, returning them formatted for the prompt
+   */
+  private consumeHints(): string | null {
+    if (this.pendingHints.length === 0) return null;
+
+    const hints = this.pendingHints.slice();
+    this.pendingHints = [];
+
+    if (hints.length === 1) {
+      return `\n\nUser hint for this iteration:\n${hints[0]}`;
+    }
+
+    const formattedHints = hints.map((h, i) => `${i + 1}. ${h}`).join("\n");
+    return `\n\nUser hints for this iteration:\n${formattedHints}`;
   }
 
   /**

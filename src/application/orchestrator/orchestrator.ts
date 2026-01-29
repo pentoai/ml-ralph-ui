@@ -28,7 +28,7 @@ export class DefaultOrchestrator implements AgentOrchestrator {
   constructor(config: OrchestratorConfig) {
     this.runner = new RalphRunner({
       projectPath: config.projectPath,
-      maxIterations: config.maxIterations ?? 100,
+      maxIterations: config.maxIterations ?? 10,
       onOutput: (event) => this.emitOutput(event),
       onIterationStart: (iteration) => this.emitIterationChange(iteration),
       onComplete: (reason) => this.emitComplete(reason),
@@ -57,6 +57,18 @@ export class DefaultOrchestrator implements AgentOrchestrator {
 
   getCurrentIteration(): number {
     return this.runner.getCurrentIteration();
+  }
+
+  setMaxIterations(maxIterations: number): void {
+    this.runner.setMaxIterations(maxIterations);
+  }
+
+  addHint(hint: string): void {
+    this.runner.addHint(hint);
+  }
+
+  getPendingHintsCount(): number {
+    return this.runner.getPendingHintsCount();
   }
 
   onStoryComplete(callback: StoryCompleteCallback): () => void {
