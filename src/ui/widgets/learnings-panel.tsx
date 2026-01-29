@@ -1,5 +1,6 @@
 /**
- * Learnings panel widget - displays learnings from log.jsonl with visual styling
+ * Learnings panel - displays learnings from log.jsonl
+ * Matches the visual structure of hypotheses-panel.tsx
  */
 
 import { Box, Text } from "ink";
@@ -33,9 +34,6 @@ function categorizeLearning(insight: string): { category: string; icon: string; 
   if (lower.includes("bug") || lower.includes("error") || lower.includes("fix") || lower.includes("issue")) {
     return { category: "DEBUG", icon: "🔧", color: colors.accentRed };
   }
-  if (lower.includes("hyperparam") || lower.includes("tuning") || lower.includes("config")) {
-    return { category: "TUNING", icon: "🎛️", color: colors.accentCyan };
-  }
   return { category: "INSIGHT", icon: "💡", color: colors.accentYellow };
 }
 
@@ -58,39 +56,23 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 /**
- * Summary bar showing learning counts by category
+ * Summary bar showing total count
  */
 function LearningsSummary({ learnings }: { learnings: LearningEvent[] }) {
-  const counts = {
-    model: learnings.filter(l => categorizeLearning(l.insight).category === "MODEL").length,
-    data: learnings.filter(l => categorizeLearning(l.insight).category === "DATA").length,
-    training: learnings.filter(l => categorizeLearning(l.insight).category === "TRAINING").length,
-    metrics: learnings.filter(l => categorizeLearning(l.insight).category === "METRICS").length,
-    other: learnings.filter(l => !["MODEL", "DATA", "TRAINING", "METRICS"].includes(categorizeLearning(l.insight).category)).length,
-  };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayCount = learnings.filter(l => new Date(l.ts) >= today).length;
 
   return (
     <Box marginBottom={1}>
       <Box marginRight={2}>
-        <Text backgroundColor={colors.accentPurple} color={colors.bgPrimary}> {counts.model} </Text>
-        <Text color={colors.textMuted}> Model</Text>
+        <Text backgroundColor={colors.accentYellow} color={colors.bgPrimary}> {learnings.length} </Text>
+        <Text color={colors.textMuted}> Total</Text>
       </Box>
-      <Box marginRight={2}>
-        <Text backgroundColor={colors.accentBlue} color={colors.bgPrimary}> {counts.data} </Text>
-        <Text color={colors.textMuted}> Data</Text>
-      </Box>
-      <Box marginRight={2}>
-        <Text backgroundColor={colors.accentYellow} color={colors.bgPrimary}> {counts.training} </Text>
-        <Text color={colors.textMuted}> Training</Text>
-      </Box>
-      <Box marginRight={2}>
-        <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}> {counts.metrics} </Text>
-        <Text color={colors.textMuted}> Metrics</Text>
-      </Box>
-      {counts.other > 0 && (
+      {todayCount > 0 && (
         <Box>
-          <Text backgroundColor={colors.bgTertiary} color={colors.text}> {counts.other} </Text>
-          <Text color={colors.textMuted}> Other</Text>
+          <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}> +{todayCount} </Text>
+          <Text color={colors.textMuted}> Today</Text>
         </Box>
       )}
     </Box>
@@ -108,12 +90,10 @@ export function LearningsPanel({ learnings, offset = 0, limit = 5 }: LearningsPa
         <Text color={colors.textSecondary}>
           Learnings are captured as the agent analyzes experiments and reflects.
         </Text>
-        <Box marginTop={1} flexDirection="column">
-          <Text color={colors.textMuted}>Categories include:</Text>
-          <Text color={colors.textMuted}>  🧠 Model architecture insights</Text>
-          <Text color={colors.textMuted}>  📊 Data & feature learnings</Text>
-          <Text color={colors.textMuted}>  ⚡ Training observations</Text>
-          <Text color={colors.textMuted}>  📈 Metric improvements</Text>
+        <Box marginTop={1}>
+          <Text color={colors.textMuted}>
+            Start the agent to begin capturing learnings.
+          </Text>
         </Box>
       </Box>
     );
@@ -147,10 +127,7 @@ export function LearningsPanel({ learnings, offset = 0, limit = 5 }: LearningsPa
 
       {/* Learnings list */}
       {displayLearnings.map((learning, index) => (
-        <LearningCard
-          key={`${learning.ts}-${index}`}
-          learning={learning}
-        />
+        <LearningCard key={`${learning.ts}-${index}`} learning={learning} />
       ))}
     </Box>
   );
@@ -161,11 +138,8 @@ interface LearningCardProps {
 }
 
 function LearningCard({ learning }: LearningCardProps) {
-  const timeAgo = formatRelativeTime(learning.ts);
   const { category, icon, color } = categorizeLearning(learning.insight);
-
-  // Extract key terms (simple heuristic: capitalized words or quoted text)
-  const keyTerms = learning.insight.match(/["']([^"']+)["']|`([^`]+)`/g)?.slice(0, 3) || [];
+  const timeAgo = formatRelativeTime(learning.ts);
 
   return (
     <Box
@@ -179,7 +153,8 @@ function LearningCard({ learning }: LearningCardProps) {
       {/* Header row */}
       <Box justifyContent="space-between" marginBottom={1}>
         <Box>
-          <Text>{icon} </Text>
+          <Text color={color} bold>{icon}</Text>
+          <Text color={colors.textMuted}> • </Text>
           <Text color={colors.textMuted}>{timeAgo}</Text>
         </Box>
         <Box>
@@ -190,19 +165,15 @@ function LearningCard({ learning }: LearningCardProps) {
       </Box>
 
       {/* Insight text */}
-      <Box marginBottom={keyTerms.length > 0 ? 1 : 0}>
+      <Box>
         <Text color={colors.text}>{learning.insight}</Text>
       </Box>
 
-      {/* Key terms if found */}
-      {keyTerms.length > 0 && (
-        <Box>
-          <Text color={colors.textMuted}>Tags: </Text>
-          {keyTerms.map((term, i) => (
-            <Box key={i} marginRight={1}>
-              <Text color={colors.accentCyan}>{term}</Text>
-            </Box>
-          ))}
+      {/* Source if available */}
+      {learning.source && (
+        <Box marginTop={1}>
+          <Text color={colors.textMuted}>Source: </Text>
+          <Text color={colors.textSecondary}>{learning.source}</Text>
         </Box>
       )}
     </Box>
