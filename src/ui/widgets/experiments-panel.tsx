@@ -169,10 +169,30 @@ function ExperimentRow({
 }
 
 /**
+ * Render a horizontal bar for a metric value
+ */
+function MetricBar({ value, max, width = 20 }: { value: number; max: number; width?: number }) {
+  const ratio = max > 0 ? Math.min(value / max, 1) : 0;
+  const filled = Math.round(ratio * width);
+  const empty = width - filled;
+
+  return (
+    <Text>
+      <Text color={colors.accentGreen}>{"█".repeat(filled)}</Text>
+      <Text color={colors.bgTertiary}>{"░".repeat(empty)}</Text>
+    </Text>
+  );
+}
+
+/**
  * Expanded experiment details
  */
 function ExperimentDetails({ experiment }: { experiment: ExperimentEvent }) {
   const metrics = Object.entries(experiment.metrics);
+
+  // Find max value for bar scaling (only for values 0-1 range, like percentages)
+  const normalizedMetrics = metrics.filter(([_, v]) => v >= 0 && v <= 1);
+  const largeMetrics = metrics.filter(([_, v]) => v < 0 || v > 1);
 
   return (
     <Box
@@ -184,20 +204,46 @@ function ExperimentDetails({ experiment }: { experiment: ExperimentEvent }) {
       marginLeft={2}
       marginBottom={1}
     >
-      {/* Metrics grid */}
-      <Box marginBottom={1}>
-        <Text color={colors.textMuted} bold>Metrics:</Text>
-      </Box>
-      <Box flexDirection="column" marginBottom={1}>
-        {metrics.map(([key, value]) => (
-          <Box key={key}>
-            <Box width={24}>
-              <Text color={colors.textSecondary}>{key}</Text>
-            </Box>
-            <Text color={colors.accentGreen}>{formatNumber(value)}</Text>
+      {/* Normalized metrics (0-1 range) with bars */}
+      {normalizedMetrics.length > 0 && (
+        <>
+          <Box marginBottom={1}>
+            <Text color={colors.textMuted} bold>Performance:</Text>
           </Box>
-        ))}
-      </Box>
+          <Box flexDirection="column" marginBottom={1}>
+            {normalizedMetrics.map(([key, value]) => (
+              <Box key={key}>
+                <Box width={20}>
+                  <Text color={colors.textSecondary}>{key.slice(0, 18)}</Text>
+                </Box>
+                <Box width={22}>
+                  <MetricBar value={value} max={1} width={15} />
+                </Box>
+                <Text color={colors.accentGreen}>{value.toFixed(3)}</Text>
+              </Box>
+            ))}
+          </Box>
+        </>
+      )}
+
+      {/* Other metrics (counts, times, etc.) */}
+      {largeMetrics.length > 0 && (
+        <>
+          <Box marginBottom={1}>
+            <Text color={colors.textMuted} bold>Stats:</Text>
+          </Box>
+          <Box flexDirection="column" marginBottom={1}>
+            {largeMetrics.map(([key, value]) => (
+              <Box key={key}>
+                <Box width={24}>
+                  <Text color={colors.textSecondary}>{key}</Text>
+                </Box>
+                <Text color={colors.accentGreen}>{formatNumber(value)}</Text>
+              </Box>
+            ))}
+          </Box>
+        </>
+      )}
 
       {/* Observations */}
       {experiment.observations && (
@@ -258,7 +304,19 @@ export function ExperimentsPanel({
   );
 
   const total = sortedExperiments.length;
-  const safeOffset = Math.min(offset, Math.max(0, total - 1));
+
+  // Auto-scroll to keep selection visible
+  // Calculate offset based on selectedIndex to ensure selected item is visible
+  let autoOffset = offset;
+  if (selectedIndex < offset) {
+    // Selection is above visible range - scroll up
+    autoOffset = selectedIndex;
+  } else if (selectedIndex >= offset + limit) {
+    // Selection is below visible range - scroll down
+    autoOffset = selectedIndex - limit + 1;
+  }
+  const safeOffset = Math.max(0, Math.min(autoOffset, total - limit));
+
   const displayExperiments = sortedExperiments.slice(safeOffset, safeOffset + limit);
   const hasMore = safeOffset + limit < total;
   const hasPrev = safeOffset > 0;
