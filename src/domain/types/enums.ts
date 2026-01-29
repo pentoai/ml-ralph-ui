@@ -70,4 +70,4 @@ export type AgentStatus = "idle" | "running" | "paused";
 export type AppMode = "planning" | "monitor";
 
 // Tab selection in planning mode
-export type PlanningTab = "prd" | "hypotheses" | "learnings" | "research" | "stories";
+export type PlanningTab = "prd" | "hypotheses" | "learnings" | "research" | "stories" | "kanban";

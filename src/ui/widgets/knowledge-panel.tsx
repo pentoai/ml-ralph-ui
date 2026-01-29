@@ -1,5 +1,5 @@
 /**
- * Knowledge panel - shared tabs for PRD, Hypotheses, Learnings, Research
+ * Knowledge panel - shared tabs for PRD, Hypotheses, Learnings, Research, Kanban
  * Used by both Planning and Monitor screens
  */
 
@@ -8,6 +8,7 @@ import { useAppStore } from "../../application/state/index.ts";
 import { useRalphState } from "../hooks/index.ts";
 import { colors } from "../theme/colors.ts";
 import { HypothesesPanel } from "./hypotheses-panel.tsx";
+import { KanbanPanel } from "./kanban-panel.tsx";
 import { LearningsPanel } from "./learnings-panel.tsx";
 import { PrdPanel } from "./prd-panel.tsx";
 import { ResearchPanel } from "./research-panel.tsx";
@@ -16,10 +17,10 @@ import { PlanningTabs } from "./tabs.tsx";
 const ITEMS_PER_PAGE = 10;
 
 export function KnowledgePanel() {
-  const { selectedTab, projectPath, scrollOffset } = useAppStore();
+  const { selectedTab, projectPath, scrollOffset, backlogExpanded, backlogOffset, completedExpanded, completedOffset } = useAppStore();
 
   // Read Ralph state from .ml-ralph files
-  const { prd, log, isLoaded } = useRalphState({
+  const { prd, log, kanban, isLoaded } = useRalphState({
     projectPath: projectPath || process.cwd(),
     pollInterval: 2000,
   });
@@ -27,7 +28,7 @@ export function KnowledgePanel() {
   // Map old tab names to new ones for backward compatibility
   const activeTab = selectedTab === "stories"
     ? "hypotheses"
-    : (selectedTab as "prd" | "hypotheses" | "learnings" | "research");
+    : (selectedTab as "prd" | "hypotheses" | "learnings" | "research" | "kanban");
 
   return (
     <Box flexDirection="column" flexGrow={1}>
@@ -95,6 +96,17 @@ export function KnowledgePanel() {
                   research={log?.research ?? []}
                   offset={scrollOffset}
                   limit={ITEMS_PER_PAGE}
+                />
+              )}
+              {activeTab === "kanban" && (
+                <KanbanPanel
+                  kanban={kanban}
+                  offset={scrollOffset}
+                  limit={ITEMS_PER_PAGE}
+                  backlogExpanded={backlogExpanded}
+                  backlogOffset={backlogOffset}
+                  completedExpanded={completedExpanded}
+                  completedOffset={completedOffset}
                 />
               )}
             </>

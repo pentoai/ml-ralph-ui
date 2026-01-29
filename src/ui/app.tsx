@@ -30,10 +30,16 @@ export function App({ projectPath }: AppProps) {
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   // Start confirmation state
   const [showStartConfirm, setShowStartConfirm] = useState(false);
+  // Max iterations for agent run
+  const [maxIterations, setMaxIterations] = useState(10);
   // Stop confirmation state
   const [showStopConfirm, setShowStopConfirm] = useState(false);
   // No PRD dialog state
   const [showNoPrdDialog, setShowNoPrdDialog] = useState(false);
+  // Hint dialog state
+  const [showHintDialog, setShowHintDialog] = useState(false);
+  const [hintText, setHintText] = useState("");
+  const [pendingHints, setPendingHints] = useState<string[]>([]);
   // Initialization state
   const [isInitialized, setIsInitialized] = useState(false);
   // Agent output for monitor screen
@@ -57,6 +63,7 @@ export function App({ projectPath }: AppProps) {
   const {
     mode,
     setMode,
+    selectedTab,
     setSelectedTab,
     setProjectPath,
     loadProject,
@@ -71,6 +78,14 @@ export function App({ projectPath }: AppProps) {
     setInputMode,
     scrollUp,
     scrollDown,
+    backlogExpanded,
+    setBacklogExpanded,
+    scrollBacklogUp,
+    scrollBacklogDown,
+    completedExpanded,
+    setCompletedExpanded,
+    scrollCompletedUp,
+    scrollCompletedDown,
   } = useAppStore();
 
   // Tmux layout manager
@@ -105,12 +120,15 @@ export function App({ projectPath }: AppProps) {
   // Handle iteration change
   const handleIterationChange = useCallback((iteration: number) => {
     setCurrentIteration(iteration);
+    // Hints are consumed at iteration start, so clear the list
+    setPendingHints([]);
   }, []);
 
   // Handle completion
   const handleComplete = useCallback(
     (reason: "project_complete" | "max_iterations") => {
       setAgentStatus("idle");
+      setPendingHints([]);
       if (reason === "project_complete") {
         setAgentOutput((prev) => [
           ...prev,
@@ -183,6 +201,7 @@ export function App({ projectPath }: AppProps) {
     setCurrentIteration(0);
     setMode("monitor"); // Switch to monitor mode to see output
     try {
+      orchestratorRef.current?.setMaxIterations(maxIterations);
       await orchestratorRef.current?.start();
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : (err ? String(err) : "Unknown error starting agent");
@@ -216,6 +235,19 @@ export function App({ projectPath }: AppProps) {
         setShowStartConfirm(false);
         return;
       }
+      // Handle number input for max iterations
+      if (/^\d$/.test(input)) {
+        setMaxIterations((prev) => {
+          const newValue = prev * 10 + parseInt(input, 10);
+          return newValue > 999 ? parseInt(input, 10) : newValue;
+        });
+        return;
+      }
+      // Backspace to delete last digit
+      if (key.backspace || key.delete) {
+        setMaxIterations((prev) => Math.floor(prev / 10) || 1);
+        return;
+      }
       return; // Ignore other keys while dialog is open
     }
 
@@ -224,6 +256,7 @@ export function App({ projectPath }: AppProps) {
       if (input === "y" || input === "Y") {
         orchestratorRef.current?.stop();
         setAgentStatus("idle");
+        setPendingHints([]);
         setShowStopConfirm(false);
         return;
       }
@@ -238,6 +271,34 @@ export function App({ projectPath }: AppProps) {
     if (showNoPrdDialog) {
       if (key.escape || input === "o" || input === "O") {
         setShowNoPrdDialog(false);
+        return;
+      }
+      return; // Ignore other keys while dialog is open
+    }
+
+    // Handle hint dialog
+    if (showHintDialog) {
+      if (key.escape) {
+        setShowHintDialog(false);
+        setHintText("");
+        return;
+      }
+      if (key.return) {
+        if (hintText.trim()) {
+          orchestratorRef.current?.addHint(hintText.trim());
+          setPendingHints((prev) => [...prev, hintText.trim()]);
+        }
+        setShowHintDialog(false);
+        setHintText("");
+        return;
+      }
+      if (key.backspace || key.delete) {
+        setHintText((prev) => prev.slice(0, -1));
+        return;
+      }
+      // Regular character input
+      if (input && !key.ctrl && !key.meta) {
+        setHintText((prev) => prev + input);
         return;
       }
       return; // Ignore other keys while dialog is open
@@ -292,9 +353,46 @@ export function App({ projectPath }: AppProps) {
 
     // Tab shortcuts (work in both modes)
     if (input === "1") setSelectedTab("prd");
-    if (input === "2") setSelectedTab("hypotheses");
+    if (input === "2") setSelectedTab("kanban");
     if (input === "3") setSelectedTab("learnings");
     if (input === "4") setSelectedTab("research");
+    if (input === "5") setSelectedTab("hypotheses");
+
+    // Toggle backlog expansion (only on kanban tab)
+    if (input === "b" && selectedTab === "kanban") {
+      setBacklogExpanded(!backlogExpanded);
+      return;
+    }
+
+    // Toggle completed expansion (only on kanban tab)
+    if (input === "c" && selectedTab === "kanban") {
+      setCompletedExpanded(!completedExpanded);
+      return;
+    }
+
+    // Scroll backlog when expanded (Shift+J/K)
+    if (backlogExpanded && selectedTab === "kanban") {
+      if (input === "J") {
+        scrollBacklogDown();
+        return;
+      }
+      if (input === "K") {
+        scrollBacklogUp();
+        return;
+      }
+    }
+
+    // Scroll completed when expanded (Shift+J/K) - only if backlog not expanded
+    if (completedExpanded && !backlogExpanded && selectedTab === "kanban") {
+      if (input === "J") {
+        scrollCompletedDown();
+        return;
+      }
+      if (input === "K") {
+        scrollCompletedUp();
+        return;
+      }
+    }
 
     // Scroll knowledge panel (j/k or arrow keys)
     if (input === "j" || key.downArrow) {
@@ -323,6 +421,12 @@ export function App({ projectPath }: AppProps) {
         };
         checkPrd();
       }
+      return;
+    }
+
+    // Add hint (only when agent is running)
+    if (input === "h" && agentStatus === "running") {
+      setShowHintDialog(true);
       return;
     }
 
@@ -366,7 +470,7 @@ export function App({ projectPath }: AppProps) {
       {/* Navigation bar with mode tabs and help */}
       <Box paddingX={1} justifyContent="space-between" marginBottom={0}>
         <ModeTabs activeMode={mode} />
-        <HelpBar mode={mode} agentStatus={agentStatus} />
+        <HelpBar mode={mode} agentStatus={agentStatus} pendingHintsCount={pendingHints.length} />
       </Box>
 
       {/* Tmux warning */}
@@ -420,13 +524,18 @@ export function App({ projectPath }: AppProps) {
       {showQuitConfirm && <QuitConfirmDialog />}
 
       {/* Start confirmation dialog */}
-      {showStartConfirm && <StartConfirmDialog />}
+      {showStartConfirm && <StartConfirmDialog maxIterations={maxIterations} />}
 
       {/* Stop confirmation dialog */}
       {showStopConfirm && <StopConfirmDialog />}
 
       {/* No PRD dialog */}
       {showNoPrdDialog && <NoPrdDialog />}
+
+      {/* Hint dialog */}
+      {showHintDialog && (
+        <HintDialog hintText={hintText} pendingHints={pendingHints} />
+      )}
     </Box>
   );
 }
@@ -437,17 +546,22 @@ export function App({ projectPath }: AppProps) {
 function HelpBar({
   mode,
   agentStatus,
+  pendingHintsCount,
 }: {
   mode: "planning" | "monitor";
   agentStatus: string;
+  pendingHintsCount: number;
 }) {
-  const Shortcut = ({ keys, label }: { keys: string; label: string }) => (
+  const Shortcut = ({ keys, label, badge }: { keys: string; label: string; badge?: number }) => (
     <Box marginRight={2}>
       <Text backgroundColor={colors.bgTertiary} color={colors.text}>
         {" "}
         {keys}{" "}
       </Text>
       <Text color={colors.textSecondary}> {label}</Text>
+      {badge !== undefined && badge > 0 && (
+        <Text color={colors.accentYellow}> ({badge})</Text>
+      )}
     </Box>
   );
 
@@ -456,9 +570,10 @@ function HelpBar({
       <Box>
         <Shortcut keys="Tab" label="Monitor" />
         <Shortcut keys="f" label="Terminal" />
-        <Shortcut keys="1-4" label="Tabs" />
+        <Shortcut keys="1-5" label="Tabs" />
         <Shortcut keys="j/k" label="Scroll" />
         <Shortcut keys="s" label={agentStatus === "running" ? "Stop" : "Start"} />
+        {agentStatus === "running" && <Shortcut keys="h" label="Hint" badge={pendingHintsCount} />}
         <Shortcut keys="q" label="Quit" />
       </Box>
     );
@@ -467,9 +582,10 @@ function HelpBar({
   return (
     <Box>
       <Shortcut keys="Tab" label="Planning" />
-      <Shortcut keys="1-4" label="Tabs" />
+      <Shortcut keys="1-5" label="Tabs" />
       <Shortcut keys="j/k" label="Scroll" />
       <Shortcut keys="s" label={agentStatus === "running" ? "Stop" : "Start"} />
+      {agentStatus === "running" && <Shortcut keys="h" label="Hint" badge={pendingHintsCount} />}
       <Shortcut keys="q" label="Quit" />
     </Box>
   );
@@ -540,13 +656,56 @@ function QuitConfirmDialog() {
   );
 }
 
-function StartConfirmDialog() {
+function StartConfirmDialog({ maxIterations }: { maxIterations: number }) {
   return (
-    <ConfirmDialog
-      title="Start ml-ralph agent?"
-      message="This will start the autonomous ML agent loop."
-      borderColor={colors.accentGreen}
-    />
+    <Box
+      position="absolute"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      width="100%"
+      height="100%"
+      backgroundColor={colors.bgPrimary}
+    >
+      <Box
+        flexDirection="column"
+        borderStyle="double"
+        borderColor={colors.accentGreen}
+        paddingX={4}
+        paddingY={1}
+        backgroundColor={colors.bgSecondary}
+      >
+        <Text bold color={colors.text}>
+          Start ml-ralph agent?
+        </Text>
+        <Box marginTop={1}>
+          <Text color={colors.textSecondary}>
+            This will start the autonomous ML agent loop.
+          </Text>
+        </Box>
+        <Box marginTop={1} gap={1}>
+          <Text color={colors.textSecondary}>Max iterations:</Text>
+          <Text color={colors.accentBlue} bold>
+            {maxIterations}
+          </Text>
+          <Text color={colors.textMuted}>(type number to change)</Text>
+        </Box>
+        <Box marginTop={1} justifyContent="center" gap={3}>
+          <Box>
+            <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}>
+              {" Y "}
+            </Text>
+            <Text color={colors.textSecondary}> Yes</Text>
+          </Box>
+          <Box>
+            <Text backgroundColor={colors.accentRed} color={colors.bgPrimary}>
+              {" N "}
+            </Text>
+            <Text color={colors.textSecondary}> No</Text>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 
@@ -612,6 +771,109 @@ function NoPrdDialog() {
               Esc{" "}
             </Text>
             <Text color={colors.textSecondary}> OK</Text>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+/**
+ * Hint dialog - allows user to send hints to the running agent
+ */
+function HintDialog({
+  hintText,
+  pendingHints,
+}: {
+  hintText: string;
+  pendingHints: string[];
+}) {
+  // Truncate hint text for display
+  const displayText = hintText || " ";
+  const maxWidth = 50;
+
+  return (
+    <Box
+      position="absolute"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      width="100%"
+      height="100%"
+      backgroundColor={colors.bgPrimary}
+    >
+      <Box
+        flexDirection="column"
+        borderStyle="double"
+        borderColor={colors.accentBlue}
+        paddingX={2}
+        paddingY={1}
+        backgroundColor={colors.bgSecondary}
+      >
+        {/* Header */}
+        <Box marginBottom={1}>
+          <Text bold color={colors.text}>
+            Send hint to agent
+          </Text>
+          {pendingHints.length > 0 && (
+            <Text color={colors.accentYellow}>
+              {" "}({pendingHints.length} queued)
+            </Text>
+          )}
+        </Box>
+
+        {/* Queued hints */}
+        {pendingHints.length > 0 && (
+          <Box flexDirection="column" marginBottom={1}>
+            <Text color={colors.textMuted}>Queued for next iteration:</Text>
+            {pendingHints.slice(-3).map((hint, i) => (
+              <Box key={i}>
+                <Text color={colors.accentYellow}>  {i + 1}. </Text>
+                <Text color={colors.textSecondary}>
+                  {hint.length > 45 ? hint.slice(0, 45) + "..." : hint}
+                </Text>
+              </Box>
+            ))}
+            {pendingHints.length > 3 && (
+              <Text color={colors.textMuted}>  ... and {pendingHints.length - 3} more</Text>
+            )}
+          </Box>
+        )}
+
+        {/* Instructions */}
+        <Box marginBottom={1}>
+          <Text color={colors.textSecondary}>
+            Type your hint (will be added to queue):
+          </Text>
+        </Box>
+
+        {/* Text input area */}
+        <Box
+          borderStyle="single"
+          borderColor={colors.accentBlue}
+          paddingX={1}
+          paddingY={0}
+          minWidth={maxWidth}
+        >
+          <Text color={colors.text} wrap="truncate">
+            {displayText}
+            <Text color={colors.accentBlue} bold>|</Text>
+          </Text>
+        </Box>
+
+        {/* Buttons */}
+        <Box marginTop={1} gap={2}>
+          <Box>
+            <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}>
+              {" Enter "}
+            </Text>
+            <Text color={colors.textSecondary}> Add to queue</Text>
+          </Box>
+          <Box>
+            <Text backgroundColor={colors.bgTertiary} color={colors.text}>
+              {" Esc "}
+            </Text>
+            <Text color={colors.textSecondary}> Close</Text>
           </Box>
         </Box>
       </Box>

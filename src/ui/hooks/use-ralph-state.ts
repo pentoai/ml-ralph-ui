@@ -1,15 +1,17 @@
 /**
  * Hook for reading Ralph state from .ml-ralph files
- * Watches prd.json and log.jsonl for changes
+ * Watches prd.json, kanban.json, and log.jsonl for changes
  */
 
 import { useCallback, useEffect, useState } from "react";
 import {
   readPrdFile,
   readLogFile,
+  readKanbanFile,
   aggregateEvents,
   type PRD,
   type LogSummary,
+  type Kanban,
 } from "../../infrastructure/ralph/index.ts";
 
 export interface UseRalphStateOptions {
@@ -23,6 +25,8 @@ export interface UseRalphStateResult {
   prd: PRD | null;
   /** Aggregated log data */
   log: LogSummary | null;
+  /** The current Kanban (working plan) */
+  kanban: Kanban | null;
   /** Whether initial load is complete */
   isLoaded: boolean;
   /** Any error that occurred */
@@ -36,6 +40,7 @@ export function useRalphState(options: UseRalphStateOptions): UseRalphStateResul
 
   const [prd, setPrd] = useState<PRD | null>(null);
   const [log, setLog] = useState<LogSummary | null>(null);
+  const [kanban, setKanban] = useState<Kanban | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +54,10 @@ export function useRalphState(options: UseRalphStateOptions): UseRalphStateResul
       const events = await readLogFile(projectPath);
       const summary = aggregateEvents(events);
       setLog(summary);
+
+      // Read Kanban
+      const kanbanData = await readKanbanFile(projectPath);
+      setKanban(kanbanData);
 
       setError(null);
       setIsLoaded(true);
@@ -74,6 +83,7 @@ export function useRalphState(options: UseRalphStateOptions): UseRalphStateResul
   return {
     prd,
     log,
+    kanban,
     isLoaded,
     error,
     refresh,
