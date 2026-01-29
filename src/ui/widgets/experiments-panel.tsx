@@ -2,6 +2,7 @@
  * Experiments panel - displays experiments with expandable details and charts
  */
 
+import * as asciichart from "asciichart";
 import { Box, Text } from "ink";
 import type { ExperimentEvent } from "../../infrastructure/ralph/index.ts";
 import { colors } from "../theme/colors.ts";
@@ -185,6 +186,41 @@ function MetricBar({ value, max, width = 20 }: { value: number; max: number; wid
 }
 
 /**
+ * Render a chart comparing performance metrics using asciichart
+ */
+function PerformanceChart({ metrics }: { metrics: [string, number][] }) {
+  if (metrics.length === 0) return null;
+
+  // Create a simple bar-style comparison using asciichart
+  // We'll plot each metric as a point to show relative values
+  const values = metrics.map(([_, v]) => v);
+  const labels = metrics.map(([k]) => shortenKey(k));
+
+  try {
+    const chart = asciichart.plot(values, {
+      height: 4,
+      min: 0,
+      max: 1,
+      format: (x: number) => x.toFixed(2),
+    });
+
+    return (
+      <Box flexDirection="column" marginBottom={1}>
+        <Text color={colors.textMuted}>{chart}</Text>
+        <Box marginTop={0}>
+          <Text color={colors.textSecondary}>
+            {"  "}
+            {labels.map((l, i) => `${i + 1}:${l}`).join("  ")}
+          </Text>
+        </Box>
+      </Box>
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Expanded experiment details
  */
 function ExperimentDetails({ experiment }: { experiment: ExperimentEvent }) {
@@ -204,11 +240,21 @@ function ExperimentDetails({ experiment }: { experiment: ExperimentEvent }) {
       marginLeft={2}
       marginBottom={1}
     >
+      {/* Performance chart */}
+      {normalizedMetrics.length >= 2 && (
+        <>
+          <Box marginBottom={1}>
+            <Text color={colors.accentPurple} bold>Performance Chart:</Text>
+          </Box>
+          <PerformanceChart metrics={normalizedMetrics} />
+        </>
+      )}
+
       {/* Normalized metrics (0-1 range) with bars */}
       {normalizedMetrics.length > 0 && (
         <>
           <Box marginBottom={1}>
-            <Text color={colors.textMuted} bold>Performance:</Text>
+            <Text color={colors.textMuted} bold>Metrics:</Text>
           </Box>
           <Box flexDirection="column" marginBottom={1}>
             {normalizedMetrics.map(([key, value]) => (
