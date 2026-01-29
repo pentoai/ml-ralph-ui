@@ -520,6 +520,7 @@ export function App({ projectPath }: AppProps) {
             agentOutput={agentOutput}
             currentIteration={currentIteration}
             startTime={agentStartTime}
+            projectPath={projectPath}
           />
         )}
       </Box>

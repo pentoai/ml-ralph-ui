@@ -15,6 +15,7 @@ interface ActivityFeedProps {
   maxActivities?: number;
   currentIteration?: number;
   startTime?: number;
+  phase?: string | null;
 }
 
 /**
@@ -220,32 +221,26 @@ function MilestoneLine({ activity }: { activity: Activity }) {
  */
 export function ActivityFeed({
   events,
-  maxActivities = 50,
+  maxActivities = 30,
   currentIteration = 0,
   startTime = 0,
+  phase = null,
 }: ActivityFeedProps) {
-  // Process events through aggregator
-  const { activities, currentPhase } = useMemo(() => {
+  // Process events through aggregator - only process last N events for performance
+  const activities = useMemo(() => {
     const aggregator = new ActivityAggregator();
-    let phase: string | null = null;
 
-    for (const event of events) {
-      const newActivities = aggregator.process(event);
-      // Track the latest phase
-      for (const activity of newActivities) {
-        if (activity.type === "phase" && activity.phase) {
-          phase = activity.phase;
-        }
-      }
+    // Only process recent events to avoid performance issues with long sessions
+    const recentEvents = events.slice(-200);
+
+    for (const event of recentEvents) {
+      aggregator.process(event);
     }
 
     // Flush any pending activities
     aggregator.flush();
 
-    return {
-      activities: aggregator.getActivities(),
-      currentPhase: phase
-    };
+    return aggregator.getActivities();
   }, [events]);
 
   if (events.length === 0) {
@@ -259,7 +254,7 @@ export function ActivityFeed({
     );
   }
 
-  // Show last N activities
+  // Show last N activities - keep it small for UI performance
   const displayActivities = activities.slice(-maxActivities);
   const isRunning = currentIteration > 0 && !activities.some(
     a => a.content.includes("complete") || a.content.includes("Reached max")
@@ -270,10 +265,19 @@ export function ActivityFeed({
       {/* Status bar */}
       <StatusBar
         iteration={currentIteration}
-        phase={currentPhase}
+        phase={phase}
         startTime={startTime}
         isRunning={isRunning}
       />
+
+      {/* Truncation notice if we have more activities */}
+      {activities.length > maxActivities && (
+        <Box marginBottom={1}>
+          <Text color={colors.textMuted} dimColor>
+            ↑ {activities.length - maxActivities} earlier activities
+          </Text>
+        </Box>
+      )}
 
       {/* Activity feed */}
       {displayActivities.map((activity) => (

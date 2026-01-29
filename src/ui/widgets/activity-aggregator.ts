@@ -49,29 +49,7 @@ export function getToolIcon(toolName: string): string {
   return icons[toolName] ?? "►";
 }
 
-/**
- * Detect if text is a deliberate phase marker
- * Only matches lines that are primarily a phase announcement, not incidental mentions
- */
-function detectPhase(text: string): string | null {
-  const phases = ["UNDERSTAND", "STRATEGIZE", "EXECUTE", "REFLECT"];
-  const trimmed = text.trim();
-  const upper = trimmed.toUpperCase();
-
-  // Only match if the phase word is at the start or is a short line (likely a header)
-  // This avoids matching "I need to understand the data" as a phase change
-  for (const phase of phases) {
-    // Match patterns like "UNDERSTAND:", "## UNDERSTAND", "=== UNDERSTAND ===" etc.
-    if (upper.startsWith(phase) && trimmed.length < 50) {
-      return phase;
-    }
-    // Match phase in decorative headers
-    if (upper.includes(`═══ ${phase}`) || upper.includes(`=== ${phase}`)) {
-      return phase;
-    }
-  }
-  return null;
-}
+// Phase is now read from kanban.json, not detected from text
 
 /**
  * Detect if this is a state file update
@@ -135,27 +113,14 @@ export class ActivityAggregator {
         // Flush pending tools before text
         newActivities.push(...this.flush());
 
-        // Check for phase changes
-        const phase = detectPhase(event.content);
-        if (phase) {
-          newActivities.push({
-            id: this.nextId(),
-            type: "phase",
-            status: "success",
-            content: event.content,
-            phase,
-            startedAt: Date.now(),
-          });
-        } else {
-          // Regular thinking text
-          newActivities.push({
-            id: this.nextId(),
-            type: "thinking",
-            status: "success",
-            content: event.content,
-            startedAt: Date.now(),
-          });
-        }
+        // All text is thinking/narrative (phase comes from kanban)
+        newActivities.push({
+          id: this.nextId(),
+          type: "thinking",
+          status: "success",
+          content: event.content,
+          startedAt: Date.now(),
+        });
         break;
 
       case "tool_call":
