@@ -543,6 +543,157 @@ Append events to \`.ml-ralph/log.jsonl\`:
 
 ---
 
+## Experiment Tracking with wandb (MANDATORY)
+
+Every experiment that involves training a model or running evaluation MUST use wandb.
+
+### Why wandb is Required
+
+1. **Training curves** - You need to see loss/metrics over time, not just final numbers
+2. **Reproducibility** - Config is logged automatically
+3. **Comparison** - Easy to compare runs across hypotheses
+4. **Debugging** - When results are suspicious, you can inspect the training process
+
+### Naming Conventions
+
+Experiments MUST have descriptive names that communicate:
+- What model/approach is being tested
+- Which hypothesis it belongs to
+- Version/variant if iterating
+
+\`\`\`
+Good names:
+  "autoencoder-semantic-features"
+  "isolation-forest-baseline"
+  "hybrid-structural-v2"
+  "H003-deep-svdd-tuned"
+
+Bad names:
+  "T-019"          (task ID, not descriptive)
+  "experiment1"    (meaningless)
+  "test"           (what test?)
+  "run-final"      (which one?)
+\`\`\`
+
+### How to Use wandb
+
+\`\`\`python
+import wandb
+
+# Check if logged in, use offline mode if not
+try:
+    wandb.login()
+    mode = "online"
+except:
+    mode = "offline"  # Will sync later with 'wandb sync'
+
+# Initialize with descriptive name and config
+wandb.init(
+    project="your-project-name",  # From prd.json
+    name="autoencoder-semantic-features",  # Descriptive!
+    config={
+        "hypothesis_id": "H-003",
+        "model": "autoencoder",
+        "features": "semantic",
+        "learning_rate": 0.001,
+        "epochs": 50,
+        "batch_size": 64,
+        # ... all hyperparameters
+    },
+    mode=mode
+)
+
+# Log training progress EVERY EPOCH
+for epoch in range(epochs):
+    train_loss = train_one_epoch()
+    val_loss = validate()
+
+    wandb.log({
+        "epoch": epoch,
+        "train_loss": train_loss,
+        "val_loss": val_loss,
+        # Add any other metrics you track
+    })
+
+# Log final evaluation metrics
+wandb.log({
+    "final/auc_roc": auc,
+    "final/f1": f1,
+    "final/recall_at_5pct_fpr": recall,
+    "final/inference_time_ms": inference_time,
+})
+
+# Log artifacts if useful (models, plots)
+wandb.save("model.pt")
+
+wandb.finish()
+\`\`\`
+
+### Integration with log.jsonl
+
+After the wandb run, log the experiment to log.jsonl with the wandb reference:
+
+\`\`\`jsonl
+{
+  "ts": "2024-01-28T10:30:00Z",
+  "type": "experiment",
+  "name": "autoencoder-semantic-features",
+  "hypothesis_id": "H-003",
+  "wandb_run_id": "abc123xyz",
+  "wandb_url": "https://wandb.ai/user/project/runs/abc123xyz",
+  "config": {
+    "model": "autoencoder",
+    "features": "semantic",
+    "epochs": 50
+  },
+  "metrics": {
+    "auc_roc": 0.847,
+    "f1": 0.298,
+    "recall_at_5pct_fpr": 0.312
+  },
+  "observations": "Model converged quickly but F1 is low due to...",
+  "surprises": "Val loss started increasing after epoch 30 despite..."
+}
+\`\`\`
+
+### What to Log During Training
+
+| Metric | When | Why |
+|--------|------|-----|
+| \`train_loss\` | Every epoch | Track convergence |
+| \`val_loss\` | Every epoch | Detect overfitting |
+| \`learning_rate\` | If using scheduler | Debug training |
+| \`gradient_norm\` | Optional | Detect exploding/vanishing gradients |
+| Model checkpoints | Best val loss | Recovery, analysis |
+
+### What to Log at End
+
+| Metric | Required | Notes |
+|--------|----------|-------|
+| \`final/auc_roc\` | Yes | Primary metric |
+| \`final/f1\` | Yes | Balance metric |
+| \`final/recall_at_X_fpr\` | If applicable | Operating point |
+| \`final/precision\` | Yes | Completeness |
+| \`final/inference_time_ms\` | Yes | Production readiness |
+| Training time | Yes | Resource usage |
+
+### Offline Mode
+
+If wandb.login() fails (user not logged in):
+1. Use \`mode="offline"\` - wandb will save locally to \`./wandb/\`
+2. Training proceeds normally
+3. User can sync later with \`wandb sync ./wandb/offline-run-*\`
+4. TUI reads from local wandb files regardless of online/offline
+
+### Viewing Runs in TUI
+
+The TUI reads experiment data from:
+1. \`.ml-ralph/log.jsonl\` - Quick summary
+2. \`./wandb/*/files/wandb-summary.json\` - Final metrics
+3. \`./wandb/*/files/wandb-history.jsonl\` - Training curves (for graphs)
+
+---
+
 ## Querying the Log (jq examples)
 
 \`\`\`bash
@@ -933,11 +1084,14 @@ export interface HypothesisEvent extends BaseEvent {
 
 export interface ExperimentEvent extends BaseEvent {
   type: "experiment";
+  name: string; // Descriptive name like "autoencoder-semantic-features"
   hypothesis_id: string;
-  metrics: Record<string, number>;
+  wandb_run_id?: string; // wandb run ID for linking
+  wandb_url?: string; // Full wandb URL
+  config?: Record<string, unknown>; // Hyperparameters and settings
+  metrics: Record<string, number>; // Final metrics
   observations?: string;
   surprises?: string;
-  wandb_url?: string;
 }
 
 export interface LearningEvent extends BaseEvent {

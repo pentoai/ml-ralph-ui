@@ -142,12 +142,16 @@ function ExperimentRow({
   const arrow = isExpanded ? "▼" : isSelected ? "▶" : "▷";
   const metricCount = Object.keys(experiment.metrics).length;
 
+  // Use name if available, fallback to hypothesis_id
+  const displayName = (experiment as ExperimentEvent & { name?: string }).name
+    || experiment.hypothesis_id;
+
   return (
     <Box>
       <Text color={isSelected ? colors.accentBlue : colors.textMuted}>{arrow} </Text>
-      <Box width={18}>
+      <Box width={24}>
         <Text color={isSelected ? colors.accentBlue : colors.text} bold={isSelected}>
-          {experiment.hypothesis_id.slice(0, 16)}
+          {displayName.slice(0, 22)}
         </Text>
       </Box>
       {keyMetric && (
@@ -225,6 +229,7 @@ function PerformanceChart({ metrics }: { metrics: [string, number][] }) {
  */
 function ExperimentDetails({ experiment }: { experiment: ExperimentEvent }) {
   const metrics = Object.entries(experiment.metrics);
+  const extExp = experiment as ExperimentEvent & { name?: string; config?: Record<string, unknown> };
 
   // Find max value for bar scaling (only for values 0-1 range, like percentages)
   const normalizedMetrics = metrics.filter(([_, v]) => v >= 0 && v <= 1);
@@ -240,6 +245,26 @@ function ExperimentDetails({ experiment }: { experiment: ExperimentEvent }) {
       marginLeft={2}
       marginBottom={1}
     >
+      {/* Header with name and hypothesis */}
+      <Box marginBottom={1}>
+        {extExp.name && (
+          <Text color={colors.accentBlue} bold>{extExp.name}</Text>
+        )}
+        <Text color={colors.textMuted}> ({experiment.hypothesis_id})</Text>
+      </Box>
+
+      {/* Config summary if available */}
+      {extExp.config && Object.keys(extExp.config).length > 0 && (
+        <Box marginBottom={1}>
+          <Text color={colors.textSecondary}>
+            {Object.entries(extExp.config).slice(0, 4).map(([k, v]) =>
+              `${k}=${String(v)}`
+            ).join(", ")}
+            {Object.keys(extExp.config).length > 4 && " ..."}
+          </Text>
+        </Box>
+      )}
+
       {/* Performance chart */}
       {normalizedMetrics.length >= 2 && (
         <>
