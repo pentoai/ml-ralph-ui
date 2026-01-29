@@ -83,22 +83,12 @@ function StatusBar({
 function ActivityItem({ activity }: { activity: Activity }) {
   switch (activity.type) {
     case "iteration":
-      return (
-        <Box marginY={1}>
-          <Text color={colors.accentYellow} bold>
-            {activity.content}
-          </Text>
-        </Box>
-      );
+      // Skip - already shown in status bar
+      return null;
 
     case "phase":
-      return (
-        <Box marginY={1}>
-          <Text color={colors.accentPurple} bold>
-            ═══ {activity.phase} ═══
-          </Text>
-        </Box>
-      );
+      // Skip - already shown in status bar
+      return null;
 
     case "thinking":
       return <ThinkingBlock text={activity.content} />;

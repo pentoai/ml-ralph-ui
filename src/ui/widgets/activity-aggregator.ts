@@ -50,14 +50,23 @@ export function getToolIcon(toolName: string): string {
 }
 
 /**
- * Detect if text contains a phase marker
+ * Detect if text is a deliberate phase marker
+ * Only matches lines that are primarily a phase announcement, not incidental mentions
  */
 function detectPhase(text: string): string | null {
   const phases = ["UNDERSTAND", "STRATEGIZE", "EXECUTE", "REFLECT"];
-  const upper = text.toUpperCase();
+  const trimmed = text.trim();
+  const upper = trimmed.toUpperCase();
 
+  // Only match if the phase word is at the start or is a short line (likely a header)
+  // This avoids matching "I need to understand the data" as a phase change
   for (const phase of phases) {
-    if (upper.includes(phase)) {
+    // Match patterns like "UNDERSTAND:", "## UNDERSTAND", "=== UNDERSTAND ===" etc.
+    if (upper.startsWith(phase) && trimmed.length < 50) {
+      return phase;
+    }
+    // Match phase in decorative headers
+    if (upper.includes(`═══ ${phase}`) || upper.includes(`=== ${phase}`)) {
       return phase;
     }
   }
