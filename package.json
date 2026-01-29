@@ -1,6 +1,6 @@
 {
   "name": "@pentoai/ml-ralph-ui",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Autonomous ML engineering agent with TUI",
   "module": "src/index.tsx",
   "type": "module",
