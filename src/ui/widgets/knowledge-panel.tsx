@@ -1,5 +1,5 @@
 /**
- * Knowledge panel - shared tabs for PRD, Hypotheses, Learnings, Research, Kanban
+ * Knowledge panel - shared tabs for PRD, Hypotheses, Learnings, Research, Kanban, Experiments
  * Used by both Planning and Monitor screens
  */
 
@@ -7,6 +7,7 @@ import { Box, Text } from "ink";
 import { useAppStore } from "../../application/state/index.ts";
 import { useRalphState } from "../hooks/index.ts";
 import { colors } from "../theme/colors.ts";
+import { ExperimentsPanel } from "./experiments-panel.tsx";
 import { HypothesesPanel } from "./hypotheses-panel.tsx";
 import { KanbanPanel } from "./kanban-panel.tsx";
 import { LearningsPanel } from "./learnings-panel.tsx";
@@ -17,7 +18,19 @@ import { PlanningTabs } from "./tabs.tsx";
 const ITEMS_PER_PAGE = 5;
 
 export function KnowledgePanel() {
-  const { selectedTab, projectPath, scrollOffset, backlogExpanded, backlogOffset, completedExpanded, completedOffset, abandonedExpanded, abandonedOffset } = useAppStore();
+  const {
+    selectedTab,
+    projectPath,
+    scrollOffset,
+    backlogExpanded,
+    backlogOffset,
+    completedExpanded,
+    completedOffset,
+    abandonedExpanded,
+    abandonedOffset,
+    selectedExperimentIndex,
+    expandedExperimentId,
+  } = useAppStore();
 
   // Read Ralph state from .ml-ralph files
   const { prd, log, kanban, isLoaded } = useRalphState({
@@ -28,7 +41,7 @@ export function KnowledgePanel() {
   // Map old tab names to new ones for backward compatibility
   const activeTab = selectedTab === "stories"
     ? "hypotheses"
-    : (selectedTab as "prd" | "hypotheses" | "learnings" | "research" | "kanban");
+    : (selectedTab as "prd" | "hypotheses" | "learnings" | "research" | "kanban" | "experiments");
 
   return (
     <Box flexDirection="column" flexGrow={1}>
@@ -109,6 +122,15 @@ export function KnowledgePanel() {
                   completedOffset={completedOffset}
                   abandonedExpanded={abandonedExpanded}
                   abandonedOffset={abandonedOffset}
+                />
+              )}
+              {activeTab === "experiments" && (
+                <ExperimentsPanel
+                  experiments={log?.experiments ?? []}
+                  selectedIndex={selectedExperimentIndex}
+                  expandedId={expandedExperimentId}
+                  offset={scrollOffset}
+                  limit={ITEMS_PER_PAGE}
                 />
               )}
             </>

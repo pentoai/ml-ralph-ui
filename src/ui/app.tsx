@@ -92,6 +92,11 @@ export function App({ projectPath }: AppProps) {
     setAbandonedExpanded,
     scrollAbandonedUp,
     scrollAbandonedDown,
+    selectedExperimentIndex,
+    selectNextExperiment,
+    selectPrevExperiment,
+    toggleExpandedExperiment,
+    setExpandedExperimentId,
   } = useAppStore();
 
   // Tmux layout manager
@@ -361,9 +366,10 @@ export function App({ projectPath }: AppProps) {
     // Tab shortcuts (work in both modes)
     if (input === "1") setSelectedTab("prd");
     if (input === "2") setSelectedTab("kanban");
-    if (input === "3") setSelectedTab("learnings");
-    if (input === "4") setSelectedTab("research");
-    if (input === "5") setSelectedTab("hypotheses");
+    if (input === "3") setSelectedTab("experiments");
+    if (input === "4") setSelectedTab("hypotheses");
+    if (input === "5") setSelectedTab("learnings");
+    if (input === "6") setSelectedTab("research");
 
     // Toggle backlog expansion (only on kanban tab)
     if (input === "b" && selectedTab === "kanban") {
@@ -419,7 +425,32 @@ export function App({ projectPath }: AppProps) {
       }
     }
 
-    // Scroll knowledge panel (j/k or arrow keys)
+    // Experiments tab navigation
+    if (selectedTab === "experiments") {
+      // j/k to navigate experiment selection
+      if (input === "j" || key.downArrow) {
+        selectNextExperiment();
+        return;
+      }
+      if (input === "k" || key.upArrow) {
+        selectPrevExperiment();
+        return;
+      }
+      // Enter to toggle expand
+      if (key.return) {
+        // Generate experiment ID from index (we need log data here)
+        // For now, we'll use index-based approach
+        toggleExpandedExperiment(String(selectedExperimentIndex));
+        return;
+      }
+      // Escape to collapse
+      if (key.escape) {
+        setExpandedExperimentId(null);
+        return;
+      }
+    }
+
+    // Scroll knowledge panel (j/k or arrow keys) - for other tabs
     if (input === "j" || key.downArrow) {
       scrollDown();
       return;

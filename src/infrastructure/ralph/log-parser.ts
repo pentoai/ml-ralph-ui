@@ -34,6 +34,7 @@ export interface PrdChange {
 
 export interface LogSummary {
   hypotheses: HypothesisWithStatus[];
+  experiments: ExperimentEvent[];
   learnings: LearningEvent[];
   research: ResearchEvent[];
   prdChanges: PrdChange[];
@@ -160,6 +161,7 @@ export async function readKanbanFile(projectPath: string): Promise<Kanban | null
  */
 export function aggregateEvents(events: RalphEvent[]): LogSummary {
   const hypothesesMap = new Map<string, HypothesisWithStatus>();
+  const experiments: ExperimentEvent[] = [];
   const learnings: LearningEvent[] = [];
   const research: ResearchEvent[] = [];
   const prdChanges: PrdChange[] = [];
@@ -183,6 +185,7 @@ export function aggregateEvents(events: RalphEvent[]): LogSummary {
 
       case "experiment": {
         const e = event as ExperimentEvent;
+        experiments.push(e);
         const hyp = hypothesesMap.get(e.hypothesis_id);
         if (hyp) {
           hyp.experiments.push(e);
@@ -244,6 +247,7 @@ export function aggregateEvents(events: RalphEvent[]): LogSummary {
 
   return {
     hypotheses,
+    experiments,
     learnings,
     research,
     prdChanges,

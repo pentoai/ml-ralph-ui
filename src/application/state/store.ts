@@ -36,6 +36,8 @@ const initialState: AppState = {
   completedOffset: 0,
   abandonedExpanded: false,
   abandonedOffset: 0,
+  selectedExperimentIndex: 0,
+  expandedExperimentId: null,
   error: null,
 };
 
@@ -129,6 +131,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setAbandonedOffset: (offset) => set({ abandonedOffset: Math.max(0, offset) }),
   scrollAbandonedUp: () => set((state) => ({ abandonedOffset: Math.max(0, state.abandonedOffset - 1) })),
   scrollAbandonedDown: () => set((state) => ({ abandonedOffset: state.abandonedOffset + 1 })),
+
+  // Experiments
+  setSelectedExperimentIndex: (index) => set({ selectedExperimentIndex: Math.max(0, index) }),
+  selectNextExperiment: () => set((state) => ({ selectedExperimentIndex: state.selectedExperimentIndex + 1 })),
+  selectPrevExperiment: () => set((state) => ({ selectedExperimentIndex: Math.max(0, state.selectedExperimentIndex - 1) })),
+  setExpandedExperimentId: (id) => set({ expandedExperimentId: id }),
+  toggleExpandedExperiment: (id) => set((state) => ({
+    expandedExperimentId: state.expandedExperimentId === id ? null : id,
+  })),
 
   // PRD
   setPRD: (prd: PRD) => set({ prd }),

@@ -48,6 +48,10 @@ export interface AppState {
   abandonedExpanded: boolean; // Kanban abandoned toggle
   abandonedOffset: number; // Kanban abandoned scroll offset
 
+  // Experiments tab
+  selectedExperimentIndex: number; // Which experiment row is selected
+  expandedExperimentId: string | null; // Which experiment is expanded (null = none)
+
   // Error state
   error: string | null;
 }
@@ -77,6 +81,13 @@ export interface AppActions {
   setAbandonedOffset: (offset: number) => void;
   scrollAbandonedUp: () => void;
   scrollAbandonedDown: () => void;
+
+  // Experiments
+  setSelectedExperimentIndex: (index: number) => void;
+  selectNextExperiment: () => void;
+  selectPrevExperiment: () => void;
+  setExpandedExperimentId: (id: string | null) => void;
+  toggleExpandedExperiment: (id: string) => void;
 
   // PRD
   setPRD: (prd: PRD) => void;
