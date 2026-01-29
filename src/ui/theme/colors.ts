@@ -23,6 +23,7 @@ export const colors = {
   accentRed: "#F87171",
   accentYellow: "#FBBF24",
   accentPurple: "#A78BFA",
+  accentCyan: "#22D3EE",
 
   // Status
   statusRunning: "#60A5FA",
