@@ -58,24 +58,39 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 /**
- * Summary bar showing learning counts
+ * Summary bar showing learning counts by category
  */
 function LearningsSummary({ learnings }: { learnings: LearningEvent[] }) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const todayCount = learnings.filter(l => new Date(l.ts) >= today).length;
+  const counts = {
+    model: learnings.filter(l => categorizeLearning(l.insight).category === "MODEL").length,
+    data: learnings.filter(l => categorizeLearning(l.insight).category === "DATA").length,
+    training: learnings.filter(l => categorizeLearning(l.insight).category === "TRAINING").length,
+    metrics: learnings.filter(l => categorizeLearning(l.insight).category === "METRICS").length,
+    other: learnings.filter(l => !["MODEL", "DATA", "TRAINING", "METRICS"].includes(categorizeLearning(l.insight).category)).length,
+  };
 
   return (
     <Box marginBottom={1}>
       <Box marginRight={2}>
-        <Text backgroundColor={colors.accentYellow} color={colors.bgPrimary}> {learnings.length} </Text>
-        <Text color={colors.textMuted}> Learnings</Text>
+        <Text backgroundColor={colors.accentPurple} color={colors.bgPrimary}> {counts.model} </Text>
+        <Text color={colors.textMuted}> Model</Text>
       </Box>
-      {todayCount > 0 && (
+      <Box marginRight={2}>
+        <Text backgroundColor={colors.accentBlue} color={colors.bgPrimary}> {counts.data} </Text>
+        <Text color={colors.textMuted}> Data</Text>
+      </Box>
+      <Box marginRight={2}>
+        <Text backgroundColor={colors.accentYellow} color={colors.bgPrimary}> {counts.training} </Text>
+        <Text color={colors.textMuted}> Training</Text>
+      </Box>
+      <Box marginRight={2}>
+        <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}> {counts.metrics} </Text>
+        <Text color={colors.textMuted}> Metrics</Text>
+      </Box>
+      {counts.other > 0 && (
         <Box>
-          <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}> +{todayCount} </Text>
-          <Text color={colors.textMuted}> Today</Text>
+          <Text backgroundColor={colors.bgTertiary} color={colors.text}> {counts.other} </Text>
+          <Text color={colors.textMuted}> Other</Text>
         </Box>
       )}
     </Box>

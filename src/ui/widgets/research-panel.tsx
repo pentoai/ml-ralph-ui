@@ -94,13 +94,55 @@ function getRelevanceIndicator(insight: string | undefined): { level: string; co
 }
 
 /**
- * Simple summary showing just total count
+ * Summary bar showing research counts by source type
  */
 function ResearchSummary({ research }: { research: ResearchEvent[] }) {
+  const counts = {
+    kaggle: research.filter(r => getSourceConfig(r.source).type === "kaggle").length,
+    paper: research.filter(r => getSourceConfig(r.source).type === "paper").length,
+    github: research.filter(r => getSourceConfig(r.source).type === "github").length,
+    docs: research.filter(r => getSourceConfig(r.source).type === "docs").length,
+    other: research.filter(r => !["kaggle", "paper", "github", "docs"].includes(getSourceConfig(r.source).type)).length,
+  };
+
   return (
     <Box marginBottom={1}>
-      <Text backgroundColor={colors.accentBlue} color={colors.bgPrimary}> {research.length} </Text>
-      <Text color={colors.textMuted}> Research findings</Text>
+      {counts.kaggle > 0 && (
+        <Box marginRight={2}>
+          <Text backgroundColor={colors.accentYellow} color={colors.bgPrimary}> {counts.kaggle} </Text>
+          <Text color={colors.textMuted}> Kaggle</Text>
+        </Box>
+      )}
+      {counts.paper > 0 && (
+        <Box marginRight={2}>
+          <Text backgroundColor={colors.accentPurple} color={colors.bgPrimary}> {counts.paper} </Text>
+          <Text color={colors.textMuted}> Papers</Text>
+        </Box>
+      )}
+      {counts.github > 0 && (
+        <Box marginRight={2}>
+          <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}> {counts.github} </Text>
+          <Text color={colors.textMuted}> GitHub</Text>
+        </Box>
+      )}
+      {counts.docs > 0 && (
+        <Box marginRight={2}>
+          <Text backgroundColor={colors.accentBlue} color={colors.bgPrimary}> {counts.docs} </Text>
+          <Text color={colors.textMuted}> Docs</Text>
+        </Box>
+      )}
+      {counts.other > 0 && (
+        <Box marginRight={2}>
+          <Text backgroundColor={colors.bgTertiary} color={colors.text}> {counts.other} </Text>
+          <Text color={colors.textMuted}> Other</Text>
+        </Box>
+      )}
+      {research.length === 0 && (
+        <Box>
+          <Text backgroundColor={colors.accentBlue} color={colors.bgPrimary}> 0 </Text>
+          <Text color={colors.textMuted}> Research</Text>
+        </Box>
+      )}
     </Box>
   );
 }
@@ -206,6 +248,8 @@ function ResearchCard({ item }: ResearchCardProps) {
           <Text>{config.icon} </Text>
           <Text color={config.color} bold>{item.source}</Text>
           <Text color={colors.textMuted}> • </Text>
+          <Text color={colors.textMuted}>{timeAgo}</Text>
+          <Text color={colors.textMuted}> • </Text>
           <Text color={relevance.color}>{relevance.dots}</Text>
         </Box>
         <Box>
@@ -213,11 +257,6 @@ function ResearchCard({ item }: ResearchCardProps) {
             {" "}{config.label}{" "}
           </Text>
         </Box>
-      </Box>
-
-      {/* Time */}
-      <Box marginBottom={1}>
-        <Text color={colors.textMuted}>{timeAgo}</Text>
       </Box>
 
       {/* Insight */}
