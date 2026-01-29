@@ -55,29 +55,6 @@ function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString();
 }
 
-/**
- * Summary bar showing total count
- */
-function ResearchSummary({ research }: { research: ResearchEvent[] }) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayCount = research.filter(r => new Date(r.ts) >= today).length;
-
-  return (
-    <Box marginBottom={1}>
-      <Box marginRight={2}>
-        <Text backgroundColor={colors.accentBlue} color={colors.bgPrimary}> {research.length} </Text>
-        <Text color={colors.textMuted}> Total</Text>
-      </Box>
-      {todayCount > 0 && (
-        <Box>
-          <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}> +{todayCount} </Text>
-          <Text color={colors.textMuted}> Today</Text>
-        </Box>
-      )}
-    </Box>
-  );
-}
 
 export function ResearchPanel({ research, offset = 0, limit = 5 }: ResearchPanelProps) {
   if (research.length === 0) {
@@ -112,9 +89,6 @@ export function ResearchPanel({ research, offset = 0, limit = 5 }: ResearchPanel
 
   return (
     <Box flexDirection="column" paddingX={1}>
-      {/* Summary */}
-      <ResearchSummary research={research} />
-
       {/* Pagination info */}
       {(hasPrev || hasMore) && (
         <Box marginBottom={1}>

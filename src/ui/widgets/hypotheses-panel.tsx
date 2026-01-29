@@ -13,39 +13,6 @@ interface HypothesesPanelProps {
 }
 
 /**
- * Summary bar showing hypothesis counts by status
- */
-function HypothesisSummary({ hypotheses }: { hypotheses: HypothesisWithStatus[] }) {
-  const counts = {
-    pending: hypotheses.filter(h => h.status === "pending").length,
-    keep: hypotheses.filter(h => h.status === "keep").length,
-    reject: hypotheses.filter(h => h.status === "reject").length,
-    iterate: hypotheses.filter(h => h.status === "iterate").length,
-  };
-
-  return (
-    <Box marginBottom={1}>
-      <Box marginRight={2}>
-        <Text backgroundColor={colors.accentYellow} color={colors.bgPrimary}> {counts.pending} </Text>
-        <Text color={colors.textMuted}> Pending</Text>
-      </Box>
-      <Box marginRight={2}>
-        <Text backgroundColor={colors.accentBlue} color={colors.bgPrimary}> {counts.iterate} </Text>
-        <Text color={colors.textMuted}> Iterating</Text>
-      </Box>
-      <Box marginRight={2}>
-        <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}> {counts.keep} </Text>
-        <Text color={colors.textMuted}> Kept</Text>
-      </Box>
-      <Box>
-        <Text backgroundColor={colors.accentRed} color={colors.bgPrimary}> {counts.reject} </Text>
-        <Text color={colors.textMuted}> Rejected</Text>
-      </Box>
-    </Box>
-  );
-}
-
-/**
  * Progress bar for experiments
  */
 function ExperimentProgress({ count }: { count: number }) {
@@ -85,9 +52,6 @@ export function HypothesesPanel({ hypotheses, offset = 0, limit = 5 }: Hypothese
 
   return (
     <Box flexDirection="column" paddingX={1}>
-      {/* Summary */}
-      <HypothesisSummary hypotheses={hypotheses} />
-
       {/* Pagination info */}
       {(hasPrev || hasMore) && (
         <Box marginBottom={1}>

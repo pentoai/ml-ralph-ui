@@ -55,29 +55,6 @@ function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString();
 }
 
-/**
- * Summary bar showing total count
- */
-function LearningsSummary({ learnings }: { learnings: LearningEvent[] }) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayCount = learnings.filter(l => new Date(l.ts) >= today).length;
-
-  return (
-    <Box marginBottom={1}>
-      <Box marginRight={2}>
-        <Text backgroundColor={colors.accentYellow} color={colors.bgPrimary}> {learnings.length} </Text>
-        <Text color={colors.textMuted}> Total</Text>
-      </Box>
-      {todayCount > 0 && (
-        <Box>
-          <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}> +{todayCount} </Text>
-          <Text color={colors.textMuted}> Today</Text>
-        </Box>
-      )}
-    </Box>
-  );
-}
 
 export function LearningsPanel({ learnings, offset = 0, limit = 5 }: LearningsPanelProps) {
   if (learnings.length === 0) {
@@ -112,9 +89,6 @@ export function LearningsPanel({ learnings, offset = 0, limit = 5 }: LearningsPa
 
   return (
     <Box flexDirection="column" paddingX={1}>
-      {/* Summary */}
-      <LearningsSummary learnings={learnings} />
-
       {/* Pagination info */}
       {(hasPrev || hasMore) && (
         <Box marginBottom={1}>
