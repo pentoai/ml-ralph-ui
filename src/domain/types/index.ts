@@ -42,3 +42,6 @@ export { createProgressEntry } from "./progress.ts";
 // Research
 export type { CodeSnippet, ResearchItem } from "./research.ts";
 export { createResearchItem } from "./research.ts";
+// Kanban
+export type { Kanban, KanbanTask, CompletedTask, AbandonedTask } from "./kanban.ts";
+export { createEmptyKanban } from "./kanban.ts";

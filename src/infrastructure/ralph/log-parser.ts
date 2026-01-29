@@ -104,6 +104,58 @@ export async function readPrdFile(projectPath: string): Promise<PRD | null> {
 }
 
 /**
+ * Kanban types for the working plan
+ */
+export interface KanbanTask {
+  id: string;
+  title: string;
+  why: string;
+  expected_outcome?: string;
+  phase?: string;
+  depends_on?: string;
+  notes?: string;
+}
+
+export interface CompletedTask extends KanbanTask {
+  outcome: string;
+  completed_at: string;
+}
+
+export interface AbandonedTask extends KanbanTask {
+  reason: string;
+  abandoned_at: string;
+}
+
+export interface Kanban {
+  last_updated: string;
+  update_reason: string;
+  current_focus: KanbanTask | null;
+  up_next: KanbanTask[];
+  backlog: KanbanTask[];
+  completed: CompletedTask[];
+  abandoned: AbandonedTask[];
+}
+
+/**
+ * Read the Kanban file
+ */
+export async function readKanbanFile(projectPath: string): Promise<Kanban | null> {
+  const kanbanPath = `${projectPath}/.ml-ralph/kanban.json`;
+
+  try {
+    const file = Bun.file(kanbanPath);
+    if (!(await file.exists())) {
+      return null;
+    }
+
+    const content = await file.json();
+    return content as Kanban;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Aggregate events into a summary for the TUI
  */
 export function aggregateEvents(events: RalphEvent[]): LogSummary {

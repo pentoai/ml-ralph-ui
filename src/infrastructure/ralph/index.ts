@@ -11,11 +11,12 @@ export type { RunnerConfig, StreamEvent } from "./runner.ts";
 export {
   readLogFile,
   readPrdFile,
+  readKanbanFile,
   aggregateEvents,
   watchLogFile,
   appendEvent,
 } from "./log-parser.ts";
-export type { HypothesisWithStatus, PrdChange, LogSummary } from "./log-parser.ts";
+export type { HypothesisWithStatus, PrdChange, LogSummary, Kanban, KanbanTask, CompletedTask, AbandonedTask } from "./log-parser.ts";
 
 export type {
   RalphEvent,
