@@ -114,14 +114,76 @@ export async function initRalph(options: InitOptions): Promise<InitResult> {
 }
 
 /**
+ * Ensure skills are installed in .claude and .codex directories
+ */
+async function ensureSkills(projectPath: string): Promise<void> {
+  const skillDirs = [
+    `${projectPath}/.claude/skills/ml-ralph`,
+    `${projectPath}/.codex/skills/ml-ralph`,
+  ];
+
+  for (const skillDir of skillDirs) {
+    const skillPath = `${skillDir}/SKILL.md`;
+    const skillFile = Bun.file(skillPath);
+    if (!(await skillFile.exists())) {
+      await Bun.$`mkdir -p ${skillDir}`.quiet();
+      await Bun.write(skillPath, SKILL_MD);
+    }
+  }
+}
+
+/**
  * Ensure ml-ralph is initialized, initializing if needed
+ *
+ * This is more permissive than initRalph - it will create the .ml-ralph/
+ * directory structure without requiring CLAUDE.md/AGENTS.md to be absent.
  */
 export async function ensureInitialized(projectPath: string): Promise<boolean> {
   const initialized = await isInitialized(projectPath);
+
+  // Always ensure skills are installed
+  await ensureSkills(projectPath);
+
   if (initialized) {
     return true;
   }
 
+  // Try normal init first
   const result = await initRalph({ projectPath, force: false });
-  return result.success;
+  if (result.success) {
+    return true;
+  }
+
+  // If it failed due to existing CLAUDE.md/AGENTS.md, create just the .ml-ralph/ structure
+  const mlRalphDir = `${projectPath}/${ML_RALPH_DIR}`;
+
+  // Ensure directory exists
+  const dir = Bun.file(mlRalphDir);
+  const dirExists = await dir.exists();
+  if (!dirExists) {
+    await Bun.$`mkdir -p ${mlRalphDir}`.quiet();
+  }
+
+  // Write RALPH.md (the marker file for initialization)
+  const ralphMdPath = `${mlRalphDir}/RALPH.md`;
+  await Bun.write(ralphMdPath, RALPH_MD);
+
+  // Create empty log.jsonl if it doesn't exist
+  const logPath = `${mlRalphDir}/log.jsonl`;
+  const logFile = Bun.file(logPath);
+  if (!(await logFile.exists())) {
+    await Bun.write(logPath, "");
+  }
+
+  // Create default prd.json if it doesn't exist
+  const prdPath = `${mlRalphDir}/prd.json`;
+  const prdFile = Bun.file(prdPath);
+  if (!(await prdFile.exists())) {
+    const projectName = projectPath.split("/").pop() || "ml-project";
+    const prd = { ...DEFAULT_PRD, project: projectName };
+    await Bun.write(prdPath, JSON.stringify(prd, null, 2));
+  }
+
+  // Verify initialization succeeded
+  return isInitialized(projectPath);
 }
