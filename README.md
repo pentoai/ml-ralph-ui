@@ -1,4 +1,6 @@
-# ml-ralph
+# @pentoai/ml-ralph-ui
+
+[![npm version](https://badge.fury.io/js/@pentoai%2Fml-ralph-ui.svg)](https://www.npmjs.com/package/@pentoai/ml-ralph-ui)
 
 An autonomous ML engineering agent with a terminal user interface (TUI).
 
@@ -60,16 +62,18 @@ ml-ralph is built as a TUI using [Ink](https://github.com/vadimdemedes/ink) (Rea
 ## Quick Start
 
 ```bash
-# Install
-bun install -g ml-ralph
+# Run directly with bunx
+bunx @pentoai/ml-ralph-ui
 
-# Initialize in your ML project
-cd your-ml-project
-ml-ralph init
-
-# Launch TUI
+# Or install globally
+bun install -g @pentoai/ml-ralph-ui
 ml-ralph
 ```
+
+## Requirements
+
+- [Bun](https://bun.sh/) runtime
+- [Claude Code](https://claude.ai/code) CLI installed and authenticated
 
 ## Documentation
 
