@@ -1,54 +1,49 @@
 /**
  * Monitor screen - Agent output + Knowledge panel
  *
- * Shows agent output on the left and knowledge tabs on the right.
+ * Shows agent activity feed on the left and knowledge tabs on the right.
  */
 
 import { Box, Text } from "ink";
 import { useAppStore } from "../../application/state/index.ts";
 import type { StreamEvent } from "../../infrastructure/ralph/index.ts";
 import { colors } from "../theme/colors.ts";
-import { AgentOutput } from "../widgets/agent-output.tsx";
+import { ActivityFeed } from "../widgets/activity-feed.tsx";
 import { KnowledgePanel } from "../widgets/knowledge-panel.tsx";
 
 interface MonitorScreenProps {
   agentOutput?: StreamEvent[];
   currentIteration?: number;
+  startTime?: number;
 }
 
 export function MonitorScreen({
   agentOutput = [],
   currentIteration = 0,
+  startTime = 0,
 }: MonitorScreenProps) {
   const { agentStatus } = useAppStore();
 
   return (
     <Box flexDirection="row" height="100%">
-      {/* Left panel - Agent output (1/3) */}
+      {/* Left panel - Activity feed (40%) */}
       <Box
         flexDirection="column"
-        width="33%"
+        width="40%"
         borderStyle="single"
-        borderColor={colors.textMuted}
+        borderColor={agentStatus === "running" ? colors.accentBlue : colors.textMuted}
       >
         <Box paddingX={1} justifyContent="space-between">
           <Text color={colors.accentBlue} bold>
-            Agent Output
+            Activity
           </Text>
-          <Box gap={2}>
-            {currentIteration > 0 && (
-              <Text color={colors.textSecondary}>
-                Iteration {currentIteration}
-              </Text>
-            )}
-            <Text
-              color={
-                agentStatus === "running" ? colors.accentGreen : colors.textMuted
-              }
-            >
-              {agentStatus === "running" ? "Running" : "Idle"}
-            </Text>
-          </Box>
+          <Text
+            color={
+              agentStatus === "running" ? colors.accentGreen : colors.textMuted
+            }
+          >
+            {agentStatus === "running" ? "● Running" : "○ Idle"}
+          </Text>
         </Box>
         <Box
           flexDirection="column"
@@ -56,16 +51,17 @@ export function MonitorScreen({
           flexGrow={1}
           overflowY="hidden"
         >
-          <AgentOutput
+          <ActivityFeed
             events={agentOutput}
-            maxLines={30}
+            maxActivities={40}
             currentIteration={currentIteration}
+            startTime={startTime}
           />
         </Box>
       </Box>
 
-      {/* Right panel - Knowledge tabs (2/3) */}
-      <Box flexDirection="column" width="67%">
+      {/* Right panel - Knowledge tabs (60%) */}
+      <Box flexDirection="column" width="60%">
         <KnowledgePanel />
       </Box>
     </Box>

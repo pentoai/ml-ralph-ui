@@ -46,6 +46,8 @@ export function App({ projectPath }: AppProps) {
   const [agentOutput, setAgentOutput] = useState<StreamEvent[]>([]);
   // Current iteration
   const [currentIteration, setCurrentIteration] = useState(0);
+  // Agent start time for elapsed timer
+  const [agentStartTime, setAgentStartTime] = useState(0);
 
   useEffect(() => {
     const handleResize = () => {
@@ -199,6 +201,7 @@ export function App({ projectPath }: AppProps) {
     setAgentStatus("running");
     setAgentOutput([]); // Clear previous output
     setCurrentIteration(0);
+    setAgentStartTime(Date.now()); // Track start time for elapsed timer
     setMode("monitor"); // Switch to monitor mode to see output
     try {
       orchestratorRef.current?.setMaxIterations(maxIterations);
@@ -516,6 +519,7 @@ export function App({ projectPath }: AppProps) {
           <MonitorScreen
             agentOutput={agentOutput}
             currentIteration={currentIteration}
+            startTime={agentStartTime}
           />
         )}
       </Box>
