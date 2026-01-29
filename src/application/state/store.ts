@@ -30,6 +30,10 @@ const initialState: AppState = {
   selectedTab: "prd",
   inputMode: false,
   scrollOffset: 0,
+  backlogExpanded: false,
+  backlogOffset: 0,
+  completedExpanded: false,
+  completedOffset: 0,
   error: null,
 };
 
@@ -111,6 +115,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setScrollOffset: (offset) => set({ scrollOffset: Math.max(0, offset) }),
   scrollUp: () => set((state) => ({ scrollOffset: Math.max(0, state.scrollOffset - 1) })),
   scrollDown: () => set((state) => ({ scrollOffset: state.scrollOffset + 1 })),
+  setBacklogExpanded: (expanded) => set({ backlogExpanded: expanded, backlogOffset: 0 }),
+  setBacklogOffset: (offset) => set({ backlogOffset: Math.max(0, offset) }),
+  scrollBacklogUp: () => set((state) => ({ backlogOffset: Math.max(0, state.backlogOffset - 1) })),
+  scrollBacklogDown: () => set((state) => ({ backlogOffset: state.backlogOffset + 1 })),
+  setCompletedExpanded: (expanded) => set({ completedExpanded: expanded, completedOffset: 0 }),
+  setCompletedOffset: (offset) => set({ completedOffset: Math.max(0, offset) }),
+  scrollCompletedUp: () => set((state) => ({ completedOffset: Math.max(0, state.completedOffset - 1) })),
+  scrollCompletedDown: () => set((state) => ({ completedOffset: state.completedOffset + 1 })),
 
   // PRD
   setPRD: (prd: PRD) => set({ prd }),

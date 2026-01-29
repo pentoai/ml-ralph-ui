@@ -41,6 +41,10 @@ export interface AppState {
   selectedTab: PlanningTab;
   inputMode: boolean; // When true, keyboard goes to chat input
   scrollOffset: number; // Scroll offset for knowledge panel
+  backlogExpanded: boolean; // Kanban backlog toggle
+  backlogOffset: number; // Kanban backlog scroll offset
+  completedExpanded: boolean; // Kanban completed toggle
+  completedOffset: number; // Kanban completed scroll offset
 
   // Error state
   error: string | null;
@@ -59,6 +63,14 @@ export interface AppActions {
   setScrollOffset: (offset: number) => void;
   scrollUp: () => void;
   scrollDown: () => void;
+  setBacklogExpanded: (expanded: boolean) => void;
+  setBacklogOffset: (offset: number) => void;
+  scrollBacklogUp: () => void;
+  scrollBacklogDown: () => void;
+  setCompletedExpanded: (expanded: boolean) => void;
+  setCompletedOffset: (offset: number) => void;
+  scrollCompletedUp: () => void;
+  scrollCompletedDown: () => void;
 
   // PRD
   setPRD: (prd: PRD) => void;
