@@ -286,10 +286,10 @@ export function ExperimentsPanel({
       {displayExperiments.map((exp, index) => {
         const globalIndex = safeOffset + index;
         const isSelected = globalIndex === selectedIndex;
-        const isExpanded = expandedId === `${exp.hypothesis_id}-${exp.ts}`;
+        const isExpanded = expandedId === String(globalIndex);
 
         return (
-          <Box key={`${exp.hypothesis_id}-${exp.ts}`} flexDirection="column">
+          <Box key={`${exp.hypothesis_id}-${exp.ts}-${index}`} flexDirection="column">
             <ExperimentRow
               experiment={exp}
               isSelected={isSelected}
