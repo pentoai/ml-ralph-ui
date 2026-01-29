@@ -19,4 +19,8 @@ jobs:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
+<<<<<<< HEAD
       - run: npm publish --access public
+=======
+      - run: npm publish --provenance --access public
+>>>>>>> a0ee86f (ci: use npm trusted publishing with OIDC)
