@@ -53,46 +53,75 @@ export function sparkline(data: number[]): string {
 }
 
 /**
- * Format metrics for display
+ * Format a number for compact display
  */
-function formatMetric(key: string, value: number): string {
-  // Format based on metric type
-  if (key.includes("time") || key.includes("ms")) {
-    return `${value.toFixed(1)}ms`;
-  }
-  if (value < 0.01) {
-    return value.toExponential(2);
-  }
-  if (value < 1) {
-    return value.toFixed(3);
-  }
-  return value.toFixed(2);
+function formatNumber(value: number): string {
+  if (value === 0) return "0";
+
+  const abs = Math.abs(value);
+
+  // Very small numbers
+  if (abs < 0.001) return value.toExponential(1);
+
+  // Decimals (0.001 to 1)
+  if (abs < 1) return value.toFixed(2);
+
+  // Small integers (1 to 999)
+  if (abs < 1000) return value.toFixed(abs < 10 ? 2 : 0);
+
+  // Thousands
+  if (abs < 1000000) return `${(value / 1000).toFixed(1)}k`;
+
+  // Millions
+  return `${(value / 1000000).toFixed(1)}M`;
 }
 
 /**
- * Get key metrics to show in collapsed view
+ * Shorten a metric key for display
  */
-function getKeyMetrics(metrics: Record<string, number>): { key: string; value: number }[] {
-  const priority = ["auc_roc", "auc", "f1", "accuracy", "recall", "precision", "loss"];
-  const result: { key: string; value: number }[] = [];
+function shortenKey(key: string): string {
+  // Common abbreviations
+  const abbrevs: Record<string, string> = {
+    accuracy: "acc",
+    precision: "prec",
+    recall: "rec",
+    inference_time: "inf",
+    training_time: "train",
+    samples: "n",
+    auc_roc: "auc",
+    recall_at_5pct_fpr: "r@5%",
+    f1_score: "f1",
+  };
+
+  const lower = key.toLowerCase();
+  for (const [full, short] of Object.entries(abbrevs)) {
+    if (lower.includes(full)) return short;
+  }
+
+  // Take last part of snake_case and truncate
+  const parts = key.split("_");
+  const last = parts[parts.length - 1] ?? key;
+  return last.slice(0, 6);
+}
+
+/**
+ * Get the single most important metric to show
+ */
+function getKeyMetric(metrics: Record<string, number>): { key: string; value: number } | null {
+  const priority = ["auc_roc", "auc", "f1", "accuracy", "loss", "recall", "precision"];
 
   for (const key of priority) {
     const found = Object.entries(metrics).find(([k]) =>
       k.toLowerCase().includes(key)
     );
     if (found) {
-      result.push({ key: found[0], value: found[1] });
-      if (result.length >= 2) break;
+      return { key: found[0], value: found[1] };
     }
   }
 
-  // If no priority metrics found, take first two
-  if (result.length === 0) {
-    const entries = Object.entries(metrics).slice(0, 2);
-    result.push(...entries.map(([key, value]) => ({ key, value })));
-  }
-
-  return result;
+  // Take first metric if no priority found
+  const first = Object.entries(metrics)[0];
+  return first ? { key: first[0], value: first[1] } : null;
 }
 
 /**
@@ -108,25 +137,31 @@ function ExperimentRow({
   isExpanded: boolean;
 }) {
   const timeAgo = formatRelativeTime(experiment.ts);
-  const keyMetrics = getKeyMetrics(experiment.metrics);
+  const keyMetric = getKeyMetric(experiment.metrics);
   const arrow = isExpanded ? "▼" : isSelected ? "▶" : "▷";
+  const metricCount = Object.keys(experiment.metrics).length;
 
   return (
     <Box>
       <Text color={isSelected ? colors.accentBlue : colors.textMuted}>{arrow} </Text>
-      <Box width={16}>
+      <Box width={18}>
         <Text color={isSelected ? colors.accentBlue : colors.text} bold={isSelected}>
-          {experiment.hypothesis_id}
+          {experiment.hypothesis_id.slice(0, 16)}
         </Text>
       </Box>
-      <Text color={colors.textMuted}> │ </Text>
-      <Box width={20}>
-        {keyMetrics.map((m, i) => (
-          <Text key={m.key} color={colors.accentGreen}>
-            {i > 0 ? " " : ""}{m.key.split("_").pop()}: {formatMetric(m.key, m.value)}
-          </Text>
-        ))}
-      </Box>
+      {keyMetric && (
+        <>
+          <Text color={colors.textMuted}>│ </Text>
+          <Box width={14}>
+            <Text color={colors.accentGreen} bold>
+              {shortenKey(keyMetric.key)}: {formatNumber(keyMetric.value)}
+            </Text>
+          </Box>
+        </>
+      )}
+      {metricCount > 1 && (
+        <Text color={colors.textMuted}> +{metricCount - 1}</Text>
+      )}
       <Text color={colors.textMuted}> │ </Text>
       <Text color={colors.textSecondary}>{timeAgo}</Text>
     </Box>
@@ -156,10 +191,10 @@ function ExperimentDetails({ experiment }: { experiment: ExperimentEvent }) {
       <Box flexDirection="column" marginBottom={1}>
         {metrics.map(([key, value]) => (
           <Box key={key}>
-            <Box width={20}>
-              <Text color={colors.textSecondary}>{key}:</Text>
+            <Box width={24}>
+              <Text color={colors.textSecondary}>{key}</Text>
             </Box>
-            <Text color={colors.accentGreen}>{formatMetric(key, value)}</Text>
+            <Text color={colors.accentGreen}>{formatNumber(value)}</Text>
           </Box>
         ))}
       </Box>
