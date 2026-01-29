@@ -1,5 +1,6 @@
 /**
- * Tests for Claude client
+ * Integration tests for Claude client
+ * These tests call the real Claude API and are skipped in CI
  */
 
 import { describe, expect, test } from "bun:test";
@@ -8,8 +9,9 @@ import type { SessionInfo, ToolInfo, TurnResult } from "./types.ts";
 
 const TEST_CWD = process.cwd();
 const TEST_TIMEOUT = 30000;
+const isCI = process.env.CI === "true";
 
-describe("ClaudeClient", () => {
+describe.skipIf(isCI)("ClaudeClient", () => {
   test(
     "basic text response",
     async () => {
