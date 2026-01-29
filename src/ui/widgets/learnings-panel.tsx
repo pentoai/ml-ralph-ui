@@ -1,5 +1,5 @@
 /**
- * Learnings panel widget - displays learnings from log.jsonl
+ * Learnings panel widget - displays learnings from log.jsonl with visual styling
  */
 
 import { Box, Text } from "ink";
@@ -12,14 +12,94 @@ interface LearningsPanelProps {
   limit?: number;
 }
 
-export function LearningsPanel({ learnings, offset = 0, limit = 10 }: LearningsPanelProps) {
+/**
+ * Categorize a learning based on its content
+ */
+function categorizeLearning(insight: string): { category: string; icon: string; color: string } {
+  const lower = insight.toLowerCase();
+
+  if (lower.includes("model") || lower.includes("architecture") || lower.includes("neural")) {
+    return { category: "MODEL", icon: "🧠", color: colors.accentPurple };
+  }
+  if (lower.includes("data") || lower.includes("feature") || lower.includes("preprocess")) {
+    return { category: "DATA", icon: "📊", color: colors.accentBlue };
+  }
+  if (lower.includes("train") || lower.includes("epoch") || lower.includes("loss") || lower.includes("learning rate")) {
+    return { category: "TRAINING", icon: "⚡", color: colors.accentYellow };
+  }
+  if (lower.includes("metric") || lower.includes("accuracy") || lower.includes("score") || lower.includes("evaluat")) {
+    return { category: "METRICS", icon: "📈", color: colors.accentGreen };
+  }
+  if (lower.includes("bug") || lower.includes("error") || lower.includes("fix") || lower.includes("issue")) {
+    return { category: "DEBUG", icon: "🔧", color: colors.accentRed };
+  }
+  if (lower.includes("hyperparam") || lower.includes("tuning") || lower.includes("config")) {
+    return { category: "TUNING", icon: "🎛️", color: colors.accentCyan };
+  }
+  return { category: "INSIGHT", icon: "💡", color: colors.accentYellow };
+}
+
+/**
+ * Format relative time
+ */
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
+
+/**
+ * Summary bar showing learning counts
+ */
+function LearningsSummary({ learnings }: { learnings: LearningEvent[] }) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const todayCount = learnings.filter(l => new Date(l.ts) >= today).length;
+
+  return (
+    <Box marginBottom={1}>
+      <Box marginRight={2}>
+        <Text backgroundColor={colors.accentYellow} color={colors.bgPrimary}> {learnings.length} </Text>
+        <Text color={colors.textMuted}> Learnings</Text>
+      </Box>
+      {todayCount > 0 && (
+        <Box>
+          <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}> +{todayCount} </Text>
+          <Text color={colors.textMuted}> Today</Text>
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+export function LearningsPanel({ learnings, offset = 0, limit = 5 }: LearningsPanelProps) {
   if (learnings.length === 0) {
     return (
-      <Box flexDirection="column" padding={1}>
-        <Text color={colors.textMuted}>No learnings yet</Text>
-        <Text color={colors.textMuted}>
-          Learnings are captured as the agent analyzes experiments.
+      <Box flexDirection="column" padding={2}>
+        <Box marginBottom={1}>
+          <Text color={colors.accentYellow}>{"◇ "}</Text>
+          <Text color={colors.text}>No learnings yet</Text>
+        </Box>
+        <Text color={colors.textSecondary}>
+          Learnings are captured as the agent analyzes experiments and reflects.
         </Text>
+        <Box marginTop={1} flexDirection="column">
+          <Text color={colors.textMuted}>Categories include:</Text>
+          <Text color={colors.textMuted}>  🧠 Model architecture insights</Text>
+          <Text color={colors.textMuted}>  📊 Data & feature learnings</Text>
+          <Text color={colors.textMuted}>  ⚡ Training observations</Text>
+          <Text color={colors.textMuted}>  📈 Metric improvements</Text>
+        </Box>
       </Box>
     );
   }
@@ -36,40 +116,80 @@ export function LearningsPanel({ learnings, offset = 0, limit = 10 }: LearningsP
   const hasPrev = safeOffset > 0;
 
   return (
-    <Box flexDirection="column" gap={1}>
+    <Box flexDirection="column" paddingX={1}>
+      {/* Summary */}
+      <LearningsSummary learnings={learnings} />
+
+      {/* Pagination info */}
       {(hasPrev || hasMore) && (
-        <Text color={colors.textMuted}>
-          Showing {safeOffset + 1}-{Math.min(safeOffset + limit, total)} of {total} (j/k to scroll)
-        </Text>
+        <Box marginBottom={1}>
+          <Text color={colors.textMuted}>
+            Showing {safeOffset + 1}-{Math.min(safeOffset + limit, total)} of {total}
+          </Text>
+          <Text color={colors.textSecondary}> (j/k to scroll)</Text>
+        </Box>
       )}
+
+      {/* Learnings list */}
       {displayLearnings.map((learning, index) => (
-        <LearningItem key={`${learning.ts}-${index}`} learning={learning} />
+        <LearningCard
+          key={`${learning.ts}-${index}`}
+          learning={learning}
+        />
       ))}
     </Box>
   );
 }
 
-interface LearningItemProps {
+interface LearningCardProps {
   learning: LearningEvent;
 }
 
-function LearningItem({ learning }: LearningItemProps) {
-  // Format timestamp
-  const date = new Date(learning.ts);
-  const timeStr = date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function LearningCard({ learning }: LearningCardProps) {
+  const timeAgo = formatRelativeTime(learning.ts);
+  const { category, icon, color } = categorizeLearning(learning.insight);
+
+  // Extract key terms (simple heuristic: capitalized words or quoted text)
+  const keyTerms = learning.insight.match(/["']([^"']+)["']|`([^`]+)`/g)?.slice(0, 3) || [];
 
   return (
-    <Box flexDirection="column">
-      <Box gap={1}>
-        <Text color={colors.accentYellow}>💡</Text>
-        <Text color={colors.textMuted}>{timeStr}</Text>
+    <Box
+      flexDirection="column"
+      borderStyle="single"
+      borderColor={color}
+      paddingX={2}
+      paddingY={1}
+      marginBottom={1}
+    >
+      {/* Header row */}
+      <Box justifyContent="space-between" marginBottom={1}>
+        <Box>
+          <Text>{icon} </Text>
+          <Text color={colors.textMuted}>{timeAgo}</Text>
+        </Box>
+        <Box>
+          <Text backgroundColor={color} color={colors.bgPrimary}>
+            {" "}{category}{" "}
+          </Text>
+        </Box>
       </Box>
-      <Box marginLeft={2}>
+
+      {/* Insight text */}
+      <Box marginBottom={keyTerms.length > 0 ? 1 : 0}>
         <Text color={colors.text}>{learning.insight}</Text>
       </Box>
+
+      {/* Key terms if found */}
+      {keyTerms.length > 0 && (
+        <Box>
+          <Text color={colors.textMuted}>Tags: </Text>
+          {keyTerms.map((term, i) => (
+            <Box key={i} marginRight={1}>
+              <Text color={colors.accentCyan}>{term}</Text>
+            </Box>
+          ))}
+        </Box>
+      )}
     </Box>
   );
 }

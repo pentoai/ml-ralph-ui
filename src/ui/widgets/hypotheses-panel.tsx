@@ -1,5 +1,5 @@
 /**
- * Hypotheses panel - displays hypotheses from log.jsonl
+ * Hypotheses panel - displays hypotheses from log.jsonl with visual styling
  */
 
 import { Box, Text } from "ink";
@@ -12,14 +12,67 @@ interface HypothesesPanelProps {
   limit?: number;
 }
 
+/**
+ * Summary bar showing hypothesis counts by status
+ */
+function HypothesisSummary({ hypotheses }: { hypotheses: HypothesisWithStatus[] }) {
+  const counts = {
+    pending: hypotheses.filter(h => h.status === "pending").length,
+    keep: hypotheses.filter(h => h.status === "keep").length,
+    reject: hypotheses.filter(h => h.status === "reject").length,
+    iterate: hypotheses.filter(h => h.status === "iterate").length,
+  };
+
+  return (
+    <Box marginBottom={1}>
+      <Box marginRight={2}>
+        <Text backgroundColor={colors.accentYellow} color={colors.bgPrimary}> {counts.pending} </Text>
+        <Text color={colors.textMuted}> Pending</Text>
+      </Box>
+      <Box marginRight={2}>
+        <Text backgroundColor={colors.accentBlue} color={colors.bgPrimary}> {counts.iterate} </Text>
+        <Text color={colors.textMuted}> Iterating</Text>
+      </Box>
+      <Box marginRight={2}>
+        <Text backgroundColor={colors.accentGreen} color={colors.bgPrimary}> {counts.keep} </Text>
+        <Text color={colors.textMuted}> Kept</Text>
+      </Box>
+      <Box>
+        <Text backgroundColor={colors.accentRed} color={colors.bgPrimary}> {counts.reject} </Text>
+        <Text color={colors.textMuted}> Rejected</Text>
+      </Box>
+    </Box>
+  );
+}
+
+/**
+ * Progress bar for experiments
+ */
+function ExperimentProgress({ count }: { count: number }) {
+  if (count === 0) return null;
+
+  const dots = "●".repeat(Math.min(count, 5)) + (count > 5 ? "+" : "");
+  return (
+    <Text color={colors.accentPurple}>{dots} {count} exp</Text>
+  );
+}
+
 export function HypothesesPanel({ hypotheses, offset = 0, limit = 5 }: HypothesesPanelProps) {
   if (hypotheses.length === 0) {
     return (
-      <Box flexDirection="column" padding={1}>
-        <Text color={colors.textMuted}>No hypotheses yet</Text>
-        <Text color={colors.textMuted}>
-          Create a PRD and start the agent to generate hypotheses.
+      <Box flexDirection="column" padding={2}>
+        <Box marginBottom={1}>
+          <Text color={colors.accentYellow}>{"◇ "}</Text>
+          <Text color={colors.text}>No hypotheses yet</Text>
+        </Box>
+        <Text color={colors.textSecondary}>
+          Hypotheses are created as the agent strategizes and plans experiments.
         </Text>
+        <Box marginTop={1}>
+          <Text color={colors.textMuted}>
+            Start the agent to begin generating hypotheses.
+          </Text>
+        </Box>
       </Box>
     );
   }
@@ -31,42 +84,44 @@ export function HypothesesPanel({ hypotheses, offset = 0, limit = 5 }: Hypothese
   const hasPrev = safeOffset > 0;
 
   return (
-    <Box flexDirection="column" gap={1}>
+    <Box flexDirection="column" paddingX={1}>
+      {/* Summary */}
+      <HypothesisSummary hypotheses={hypotheses} />
+
+      {/* Pagination info */}
       {(hasPrev || hasMore) && (
-        <Text color={colors.textMuted}>
-          Showing {safeOffset + 1}-{Math.min(safeOffset + limit, total)} of {total} (j/k to scroll)
-        </Text>
+        <Box marginBottom={1}>
+          <Text color={colors.textMuted}>
+            Showing {safeOffset + 1}-{Math.min(safeOffset + limit, total)} of {total}
+          </Text>
+          <Text color={colors.textSecondary}> (j/k to scroll)</Text>
+        </Box>
       )}
+
+      {/* Hypotheses list */}
       {displayHypotheses.map((h) => (
-        <HypothesisItem key={h.id} hypothesis={h} />
+        <HypothesisCard key={h.id} hypothesis={h} />
       ))}
     </Box>
   );
 }
 
-interface HypothesisItemProps {
+interface HypothesisCardProps {
   hypothesis: HypothesisWithStatus;
 }
 
-function HypothesisItem({ hypothesis }: HypothesisItemProps) {
-  const statusColors: Record<string, string> = {
-    pending: colors.accentYellow,
-    keep: colors.accentGreen,
-    reject: colors.accentRed,
-    iterate: colors.accentBlue,
-    pivot: colors.accentYellow,
+function HypothesisCard({ hypothesis }: HypothesisCardProps) {
+  const defaultConfig = { color: colors.accentYellow, icon: "○", label: "PENDING" };
+
+  const statusConfig: Record<string, { color: string; icon: string; label: string }> = {
+    pending: defaultConfig,
+    keep: { color: colors.accentGreen, icon: "✓", label: "KEPT" },
+    reject: { color: colors.accentRed, icon: "✗", label: "REJECTED" },
+    iterate: { color: colors.accentBlue, icon: "↻", label: "ITERATING" },
+    pivot: { color: colors.accentPurple, icon: "⟳", label: "PIVOTED" },
   };
 
-  const statusIcons: Record<string, string> = {
-    pending: "○",
-    keep: "✓",
-    reject: "✗",
-    iterate: "↻",
-    pivot: "⟳",
-  };
-
-  const statusColor = statusColors[hypothesis.status] || colors.textMuted;
-  const statusIcon = statusIcons[hypothesis.status] || "?";
+  const config = statusConfig[hypothesis.status] ?? defaultConfig;
 
   // Get latest metrics if any experiments
   const latestExperiment = hypothesis.experiments[hypothesis.experiments.length - 1];
@@ -75,48 +130,57 @@ function HypothesisItem({ hypothesis }: HypothesisItemProps) {
   return (
     <Box
       flexDirection="column"
-      borderStyle="round"
-      borderColor={statusColor}
-      paddingX={1}
+      borderStyle="single"
+      borderColor={config.color}
+      paddingX={2}
+      paddingY={1}
+      marginBottom={1}
     >
-      {/* Header: ID and status */}
-      <Box justifyContent="space-between">
-        <Text color={colors.accentBlue} bold>
-          {hypothesis.id}
-        </Text>
-        <Text color={statusColor}>
-          {statusIcon} {hypothesis.status}
-        </Text>
+      {/* Header row */}
+      <Box justifyContent="space-between" marginBottom={1}>
+        <Box>
+          <Text color={config.color} bold>{hypothesis.id}</Text>
+          <Text color={colors.textMuted}> • </Text>
+          <ExperimentProgress count={hypothesis.experiments.length} />
+        </Box>
+        <Box>
+          <Text backgroundColor={config.color} color={colors.bgPrimary}>
+            {" "}{config.icon} {config.label}{" "}
+          </Text>
+        </Box>
       </Box>
 
       {/* Hypothesis text */}
-      <Text color={colors.text}>{hypothesis.hypothesis}</Text>
+      <Box marginBottom={1}>
+        <Text color={colors.text}>{hypothesis.hypothesis}</Text>
+      </Box>
 
-      {/* Expected outcome */}
-      {hypothesis.expected && (
-        <Text color={colors.textMuted}>
-          Expected: {hypothesis.expected}
-        </Text>
-      )}
+      {/* Expected vs Actual */}
+      <Box flexDirection="column">
+        {hypothesis.expected && (
+          <Box>
+            <Text color={colors.textMuted}>Expected: </Text>
+            <Text color={colors.textSecondary}>{hypothesis.expected}</Text>
+          </Box>
+        )}
 
-      {/* Metrics if available */}
-      {metrics && (
-        <Box marginTop={1}>
-          <Text color={colors.textSecondary}>
-            Metrics:{" "}
-            {Object.entries(metrics)
-              .map(([k, v]) => `${k}=${typeof v === "number" ? v.toFixed(3) : v}`)
-              .join(", ")}
-          </Text>
-        </Box>
-      )}
+        {metrics && (
+          <Box>
+            <Text color={colors.textMuted}>Results:  </Text>
+            <Text color={colors.accentGreen}>
+              {Object.entries(metrics)
+                .map(([k, v]) => `${k}=${typeof v === "number" ? v.toFixed(3) : v}`)
+                .join(", ")}
+            </Text>
+          </Box>
+        )}
+      </Box>
 
-      {/* Decision reason if decided */}
+      {/* Decision reason */}
       {hypothesis.decision && (
-        <Box marginTop={1}>
-          <Text color={colors.textMuted}>
-            → {hypothesis.decision.reason}
-          </Text>
+        <Box marginTop={1} borderStyle="single" borderColor={colors.border} paddingX={1}>
+          <Text color={colors.textMuted}>→ </Text>
+          <Text color={colors.textSecondary}>{hypothesis.decision.reason}</Text>
         </Box>
       )}
     </Box>
