@@ -14,7 +14,7 @@ import { PrdPanel } from "./prd-panel.tsx";
 import { ResearchPanel } from "./research-panel.tsx";
 import { PlanningTabs } from "./tabs.tsx";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 5;
 
 export function KnowledgePanel() {
   const { selectedTab, projectPath, scrollOffset, backlogExpanded, backlogOffset, completedExpanded, completedOffset } = useAppStore();
