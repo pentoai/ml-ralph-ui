@@ -138,9 +138,10 @@ function ExperimentRow({
   isExpanded: boolean;
 }) {
   const timeAgo = formatRelativeTime(experiment.ts);
-  const keyMetric = getKeyMetric(experiment.metrics);
+  const metrics = experiment.metrics ?? {};
+  const keyMetric = getKeyMetric(metrics);
   const arrow = isExpanded ? "▼" : isSelected ? "▶" : "▷";
-  const metricCount = Object.keys(experiment.metrics).length;
+  const metricCount = Object.keys(metrics).length;
 
   // Use name if available, fallback to hypothesis_id
   const displayName = (experiment as ExperimentEvent & { name?: string }).name
@@ -228,7 +229,8 @@ function PerformanceChart({ metrics }: { metrics: [string, number][] }) {
  * Expanded experiment details
  */
 function ExperimentDetails({ experiment }: { experiment: ExperimentEvent }) {
-  const metrics = Object.entries(experiment.metrics);
+  const metricsObj = experiment.metrics ?? {};
+  const metrics = Object.entries(metricsObj);
   const extExp = experiment as ExperimentEvent & { name?: string; config?: Record<string, unknown> };
 
   // Find max value for bar scaling (only for values 0-1 range, like percentages)
